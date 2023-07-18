@@ -37,6 +37,6 @@ router.get('/display/book_info',async(req,res)=>{
     const ISBN= req.query.ISBN
     const sql="select ISBN,book_name,pic,publish,author from book_info where ISBN=?"
     const [rows]=await db.query(sql,ISBN)
-    return res.json({rows})
+    return res.json(rows)
 })
 module.exports = router;
