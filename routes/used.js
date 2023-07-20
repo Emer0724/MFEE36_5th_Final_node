@@ -84,4 +84,12 @@ router.get('/display/member/:member_id',async(req,res)=>{
   const[rows]=await db.query(sql,member_id)
   return res.json(rows)
 })
+//used-disply-post 寫入上架資料並回傳
+router.post('/display/up-post',async(req,res)=>{
+  const data={...req.body}
+  const used_state='2'
+  const sql='INSERT INTO `used`( `ISBN`, `member_id`, `used_state`, `create_date`, `updated`) VALUES (?,?,?,?,?)'
+  const[result]=await db.query(sql,[data.ISBN,data.used_state,used_state,currentDateTime,currentDateTime])
+  return res.json(result)
+})
 module.exports = router;
