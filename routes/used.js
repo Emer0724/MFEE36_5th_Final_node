@@ -89,7 +89,12 @@ router.post('/display/up-post',async(req,res)=>{
   const data={...req.body}
   const used_state='2'
   const sql='INSERT INTO `used`( `ISBN`, `member_id`, `used_state`, `create_date`, `updated`) VALUES (?,?,?,?,?)'
-  const[result]=await db.query(sql,[data.ISBN,data.used_state,used_state,currentDateTime,currentDateTime])
-  return res.json(result)
+  const[result]=await db.query(sql,[data.ISBN,data.member_id,used_state,currentDateTime,currentDateTime])
+  if (result.insertId){
+    const sql2=`SELECT used_id,ISBN,book_name,member_id,name,mobile,email,city,district,address,full_address FROM used left JOIN book_info using(ISBN) LEFT JOIN member using(member_id) where used_id=?`
+    const [new_result]=await db.query(sql2,result.insertId)
+    return res.json([result,new_result])
+  }
+  
 })
 module.exports = router;

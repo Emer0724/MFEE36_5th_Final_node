@@ -18,6 +18,6 @@ const currentDateTime =moment().format('YYYY-MM-DD HH:mm:ss');
 //  }
 
 router.get('/display',(req,res)=>{
-   return res.send('blog/test')
+   return res.send('cart/test')
 })
 module.exports = router;
