@@ -97,4 +97,13 @@ router.post('/display/up-post',async(req,res)=>{
   }
   
 })
+//刪除資料
+router.patch('/display/delete_item/:used_id',async(req,res)=>{
+  const sql='UPDATE `used` SET `deleted`=?,`updated`=? WHERE used_id=? '
+  const used_id=req.params.used_id
+  
+  const deleted='Y'
+  const [result]=await db.query(sql,[deleted,currentDateTime,used_id])
+  return res.json(result)
+})
 module.exports = router;
