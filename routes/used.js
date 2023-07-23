@@ -129,11 +129,57 @@ router.get("/change/item/:member_id", async (req, res) => {
   //  }else{
   //    output.jwtData=res.locals.jwtData
   //  }
-  const prePage = 25;
+  let output = {
+    redirect: "",
+    totalRows: 0,
+    perPage: 25,
+    totalPages: 0,
+    page: 1,
+    rows: [],
+    error: "",
+  };
+  const perPage = 25;
   const member_id = req.params.member_id;
-  const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} order by used_state `;
-  const [rows] = await db.query(sql);
-  const totalPage = Math.ceil(rows.length / prePage);
-  return res.json([rows, totalPage]);
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let state = "";
+  if (!req.query.book_state || req.query.book_state === "all") {
+    state = "";
+  } else {
+    state = ` and used_state=${req.query.book_state}`;
+  }
+  if (!page || page < 1) {
+    output.redirect = req.baseUrl;
+    return output;
+  }
+  const totalPages_sql = `select count(used_id) AS total,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state
+   `;
+
+  const [totalRows] = await db.query(totalPages_sql);
+
+  if (totalRows[0].total === 0) {
+    output.error = "no_data";
+    return res.json(output);
+  } else {
+    const totalPages = Math.ceil(totalRows[0].total / perPage);
+    const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state limit ${
+      perPage * (page - 1)
+    }, ${perPage} `;
+    const [rows] = await db.query(sql);
+
+    if (page > totalPages) {
+      output.redirect = req.baseUrl;
+      return output;
+    }
+    output = { ...output, perPage, totalPages, page, rows };
+    return res.json(output);
+  }
 });
+router.get("/book_edit/:used_id", async (req, res) => {
+  const used_id = req.params.used_id;
+  console.log(used_id);
+  const sql = `select a.used_id,a.ISBN,b.book_name,a.used_state,a.price,b.pic,c.status_name,a.updated,a.book_note from used as a left join book_info as b using(ISBN)  left join book_status as c using(status_id)  where used_id=? and a.deleted is null `;
+  const [rows] = await db.query(sql, used_id);
+  return res.json(rows);
+});
+
 module.exports = router;
