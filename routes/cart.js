@@ -80,86 +80,31 @@ router.get('/test1',async (req, res)=>{
     [member] = await db.query(memsql);
      output = {...output, member}; //取代輸出預設值 為正確數值
        return res.json(output);
- })
+})
 
- router.post('/addToCart', (req, res) => {
+
+router.post('/addToCart',multipartParser,async(req,res)=>{
   const ISBN = req.body.ISBN;
-  // 先查詢購物車中是否已經有該商品
-  db.query(`SELECT * FROM cart WHERE ISBN = ? AND member_id = 1`, [ISBN], (error, results) => {
-    console.log(results);
-    if (error) {
-      console.error('錯誤查詢訊息:', error);
-      return res.status(500).json({ error: '購物車查詢失敗' });
-    }
-    else if (results.length > 0) {
-      const currentCount = results[0].count;
-      // 更新商品數量
-      db.query(`UPDATE cart SET count = ? WHERE ISBN = ?,updateAt=NOW() AND member_id = 1`, [currentCount + 1, ISBN], (error, updateResults) => {
-        if (error) {
-          console.error('錯誤購物車更新:', error);
-          return res.status(500).json({ error: '購物車更新失敗' });
-        }
-        console.log('成功更新購物車中的商品數量');
-        return res.json({ message: '成功更新購物車中的商品數量' });
-      });
-    } else {
-      // 插入一筆新的資料
-      db.query(`INSERT INTO cart (member_id, cart_id, ISBN, count, createAt) VALUES (1, 1, ?, 1, NOW())`, [ISBN], (error, insertResults) => {
-        if (error) {
-          console.error('錯誤購物車新增', error);
-          return res.status(500).json({ error: '購物車加入失敗' });
-        }
-        console.log('成功加入購物車');
-        return res.json({ message: '成功加入購物車' });
-      });
-    }
-  });
-});
+  console.log(ISBN)
+  const checksql = `SELECT ISBN FROM cart`;
+  const createsql = `INSERT INTO cart (member_id,ISBN, count, createAt,updateAt) VALUES (1,?,1,?,?)`;
+  const updatesql = `UPDATE cart SET count = ?, updateAt = NOW() WHERE ISBN = ? AND member_id = 1`;
+  
+  const [result] = await db.query(createsql,[ISBN,currentDateTime,currentDateTime])
+  return res.json(result)
+})
 
-
-
- router.get('/Cart',async(req,res)=>{
-   let output = {
-      totalPages: 0,
-      perpage:0,
-      page:0,
-      totalcart:0,
-      cart:[],
-   }
-   const perpage = 8;
-   let page = req.query.page ? parseInt(req.query.page) : 1;
-   const cartsqlcount = `SELECT COUNT(1) totalcart FROM cart`
-   const [[{totalcart}]] = await db.query(cartsqlcount);
-   let totalPages = 0;
-   let cart = [];
-   const joincart = `SELECT book_info.pic,book_info.book_name,book_info.price,cart.count FROM cart LEFT JOIN book_info ON cart.ISBN = book_info.ISBN`
-   if(totalcart){
-      totalPages = Math.ceil(totalcart/perpage);
-      if(page > totalPages) {
-         output.redirect = req.baseUrl + '?page=' + totalPages;
-         return res.json(output);
-       };
-       const cartsql = ` SELECT * FROM cart LIMIT ${perpage*(page-1)}, ${perpage}`;
-       [cart] = await db.query(cartsql);
-     }
-     output = {...output, totalcart, perpage, totalPages, page, cart}; //取代輸出預設值 為正確數值
-       return res.json(output);
- })
- router
-
-
+router.get('/test3',async(req,res)=>{
+  let output = {
+     totalcart:0,
+     cart:[],
+  }
+ const memsql = `SELECT * FROM cart `;
+   [cart] = await db.query(memsql);
+    output = {...output, cart}; //取代輸出預設值 為正確數值
+      return res.json(output);
+})
 
 module.exports = router;
-
-
-
-
-
-
-
-
-
-
-
 
 
