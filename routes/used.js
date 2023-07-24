@@ -65,13 +65,13 @@ router.post("/login", async (req, res) => {
 
   output.success = true;
   // 包 jwt 傳給前端
-  const secretKey = "454645f4gs6fg54s6df";
+
   const token = jwt.sign(
     {
-      id: rows[0].member_id,
+      member_id: rows[0].member_id,
       email: rows[0].email,
     },
-    secretKey
+    process.env.JWT_SECRET
   );
   output.data = {
     member_id: rows[0].member_id,
@@ -85,12 +85,21 @@ router.post("/login", async (req, res) => {
 });
 
 //used-disply-get會員資料
-router.get("/display/member/:member_id", async (req, res) => {
-  const member_id = req.params.member_id;
-  const sql =
-    "select member_id,name,mobile,email,city,district,address,full_address from member where member_id=?";
-  const [rows] = await db.query(sql, member_id);
-  return res.json(rows);
+router.get("/display/member/", async (req, res) => {
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
+    // console.log(res.locals.jwtData)
+    const sql =
+      "select member_id,name,mobile,email,city,district,address,full_address from member where member_id=?";
+    const [rows] = await db.query(sql, member_id);
+    return res.json(rows);
+  }
+  // const member_id = req.params.member_id;
 });
 //used-disply-post 寫入上架資料並回傳
 router.post("/display/up-post", async (req, res) => {
@@ -108,6 +117,7 @@ router.post("/display/up-post", async (req, res) => {
   if (result.insertId) {
     const sql2 = `SELECT used_id,ISBN,book_name,member_id,name,mobile,email,city,district,address,full_address FROM used left JOIN book_info using(ISBN) LEFT JOIN member using(member_id) where used_id=?`;
     const [new_result] = await db.query(sql2, result.insertId);
+
     return res.json([result, new_result]);
   }
 });
@@ -120,66 +130,150 @@ router.patch("/display/delete_item/:used_id", async (req, res) => {
   const [result] = await db.query(sql, [deleted, currentDateTime, used_id]);
   return res.json(result);
 });
-
-router.get("/change/item/:member_id", async (req, res) => {
-  //   token驗證
-  // if(! res.locals.jwtData){
-  //    output.error = '沒有 token 驗證'
-  //    return res.json(output);
-  //  }else{
-  //    output.jwtData=res.locals.jwtData
-  //  }
-  let output = {
-    redirect: "",
-    totalRows: 0,
-    perPage: 25,
-    totalPages: 0,
-    page: 1,
-    rows: [],
-    error: "",
-  };
-  const perPage = 25;
-  const member_id = req.params.member_id;
-  let page = req.query.page ? parseInt(req.query.page) : 1;
-  let state = "";
-  if (!req.query.book_state || req.query.book_state === "all") {
-    state = "";
-  } else {
-    state = ` and used_state=${req.query.book_state}`;
-  }
-  if (!page || page < 1) {
-    output.redirect = req.baseUrl;
-    return output;
-  }
-  const totalPages_sql = `select count(used_id) AS total,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state
-   `;
-
-  const [totalRows] = await db.query(totalPages_sql);
-
-  if (totalRows[0].total === 0) {
-    output.error = "no_data";
+//二手書進度
+router.get("/change/item/", async (req, res) => {
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
     return res.json(output);
   } else {
-    const totalPages = Math.ceil(totalRows[0].total / perPage);
-    const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state limit ${
-      perPage * (page - 1)
-    }, ${perPage} `;
-    const [rows] = await db.query(sql);
-
-    if (page > totalPages) {
+    //  output.jwtData=res.locals.jwtData
+    let output = {
+      redirect: "",
+      totalRows: 0,
+      perPage: 25,
+      totalPages: 0,
+      page: 1,
+      rows: [],
+      error: "",
+    };
+    const perPage = 25;
+    const member_id = res.locals.jwtData.member_id;
+    let page = req.query.page ? parseInt(req.query.page) : 1;
+    let state = "";
+    if (!req.query.book_state || req.query.book_state === "all") {
+      state = "";
+    } else if (req.query.book_state === "3") {
+      state = `and used_state in (3,5)`;
+    } else {
+      state = ` and used_state=${req.query.book_state}`;
+    }
+    if (!page || page < 1) {
       output.redirect = req.baseUrl;
       return output;
     }
-    output = { ...output, perPage, totalPages, page, rows };
-    return res.json(output);
+    const totalPages_sql = `select count(used_id) AS total,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state
+     `;
+
+    const [totalRows] = await db.query(totalPages_sql);
+
+    if (totalRows[0].total === 0) {
+      output.error = "no_data";
+      return res.json(output);
+    } else {
+      const totalPages = Math.ceil(totalRows[0].total / perPage);
+      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${
+        perPage * (page - 1)
+      }, ${perPage} `;
+      const [rows] = await db.query(sql);
+
+      if (page > totalPages) {
+        output.redirect = req.baseUrl;
+        return output;
+      }
+      output = { ...output, perPage, totalPages, page, rows };
+      return res.json(output);
+    }
   }
 });
+//get book
 router.get("/book_edit/:used_id", async (req, res) => {
-  const used_id = req.params.used_id;
-  console.log(used_id);
-  const sql = `select a.used_id,a.ISBN,b.book_name,a.used_state,a.price,b.pic,c.status_name,a.updated,a.book_note from used as a left join book_info as b using(ISBN)  left join book_status as c using(status_id)  where used_id=? and a.deleted is null `;
-  const [rows] = await db.query(sql, used_id);
-  return res.json(rows);
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
+    const used_id = req.params.used_id;
+    // console.log(used_id);
+    const sql = `select a.used_id,a.ISBN,b.book_name,a.used_state,a.price,b.pic,c.status_name,a.updated,a.book_note,a.return_book from used as a left join book_info as b using(ISBN)  left join book_status as c using(status_id)  where used_id=? and member_id=? and a.deleted is null `;
+    const [rows] = await db.query(sql, [used_id, member_id]);
+    if (!rows[0]) {
+      output.error = "沒有資料";
+      return res.json(output);
+    }
+    const updated = moment(rows[0].updated).format("YYYY-MM-DD HH:mm:ss");
+    // console.log(updated)
+    const newRows = { ...rows[0], updated };
+    console.log(newRows);
+    return res.json(newRows);
+  }
 });
+//放棄兌換
+router.patch("/display/give_up_exchange/:used_id", async (req, res) => {
+  const sql =
+    "UPDATE `used` SET `used_state`=?,`updated`=?,return_book=? WHERE used_id=? ";
+  const used_id = req.params.used_id;
+
+  const used_state = "5";
+  const return_book = "1";
+  const [result] = await db.query(sql, [
+    used_state,
+    currentDateTime,
+    return_book,
+    used_id,
+  ]);
+  return res.json(result);
+});
+
+// 知音幣交易
+router.patch("/used_book/exchange/:used_id", async (req, res) => {
+  output = { error: "" };
+  
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    const member_id = res.locals.jwtData.member_id;
+    const used_id = req.params.used_id
+    
+
+    
+
+    const sql_member = ` select token from member where member_id=${member_id}`;
+    let [token] = await db.query(sql_member);
+    // console.log({ ...token[0] });
+
+    token = { ...token[0] };
+    // console.log(token)
+    if (!token.token) {
+      token = 0;
+    } else {
+      token = token.token;
+    }
+    console.log(token)
+
+    const sql_used=`select price from used where used_id=? and member_id=? `
+    let [price]=await db.query(sql_used,[used_id,member_id])
+    // console.log(price)
+    price = { ...price[0]}.price;
+    console.log(price)
+  
+    const used_state = 4;
+ const sql_used_update=`UPDATE used SET used_state =?,updated=? where used_id=? and member_id=?`
+    const [result_used]=await db.query(sql_used_update,[used_state, currentDateTime,used_id,member_id])
+   
+    if(result_used.changedRows===1){
+      let newToken = Number(token) + price;
+      const sql_member_update=`UPDATE member SET token =?,updated=? where  member_id=?`
+      const [result_member]=await db.query(sql_member_update,[newToken,currentDateTime,member_id])
+      return res.json([result_used,result_member])
+
+    }
+     
+  }
+});
+
 
 module.exports = router;

@@ -69,13 +69,13 @@ app.use((req,res,next)=>{
         const token=auth.slice(7);
         let jwtData=null
         try{
-        // jwtData=jwt.verify(token,process.env.JWT_SECRET)
-            jwtData = {
-        id: 100,
-        email: 'marty2847@outlook.com',
-        mem_avatar:'null'
+        jwtData=jwt.verify(token,process.env.JWT_SECRET)
+    //         jwtData = {
+    //     id: 100,
+    //     email: 'marty2847@outlook.com',
+    //     mem_avatar:'null'
 
-      }
+    //   }
         }catch(ex){}
         if(jwtData){
             res.locals.jwtData=jwtData;
