@@ -275,5 +275,42 @@ router.patch("/used_book/exchange/:used_id", async (req, res) => {
   }
 });
 
+//取書的銷量排行 sql=`select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 50`
+//取分類的排行 sql=`select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC`
+
+router.get('/index/book_info/',async(req,res)=>{
+  const sql_info=`select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 40`
+  const [result_info]=await db.query(sql_info)
+  const result_info_sort = result_info.map((v,i)=>{
+     v.sort_num=i+1;
+     v.state='book_info'
+     return v;
+  })
+  const sql_category=`select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC limit 20`
+  const [result_category]=await db.query(sql_category)
+  const result_category_sort=result_category.map((v,i)=>{
+    v.sort_num=i+1;
+    v.state='category'
+    return v
+  })
+
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+  //合併 result_info_sort and result_category_sort
+  const combinedArray =result_info_sort.concat(result_category_sort)
+  //打亂
+  shuffleArray(combinedArray);
+
+
+  return res.json(combinedArray)
+
+})
+  
+
+
 
 module.exports = router;
