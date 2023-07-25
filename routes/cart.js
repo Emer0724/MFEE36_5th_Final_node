@@ -83,26 +83,65 @@ router.get('/test1',async (req, res)=>{
 })
 
 
-router.post('/addToCart',multipartParser,async(req,res)=>{
+router.post('/addToCart',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  console.log(ISBN)
-  const checksql = `SELECT ISBN FROM cart`;
-  const createsql = `INSERT INTO cart (member_id,ISBN, count, createAt,updateAt) VALUES (1,?,1,?,?)`;
-  const updatesql = `UPDATE cart SET count = ?, updateAt = NOW() WHERE ISBN = ? AND member_id = 1`;
-  
-  const [result] = await db.query(createsql,[ISBN,currentDateTime,currentDateTime])
-  return res.json(result)
+  const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = 1`;
+  const [checkresult] = await db.query(checksql,[ISBN])
+   console.log("我是checkresult");
+   console.log(checkresult);
+  if(checkresult.length === 0){
+    const createsql = `INSERT INTO cart (member_id,ISBN, count, createAt,updateAt) VALUES (1,?,1,?,?)`;
+    const [result] = await db.query(createsql,[ISBN,currentDateTime,currentDateTime])
+    return res.json(result)
+  }else{
+    const updatesql = `UPDATE cart SET count = ?, updateAt =? WHERE ISBN = ? AND member_id = 1`;
+    const currentCount = checkresult[0].count;
+    const newCount = currentCount + 1;
+    const [updateResult] = await db.query(updatesql, [newCount,currentDateTime,ISBN]);
+   return res.json(updateResult)
+  }
 })
 
-router.get('/test3',async(req,res)=>{
+router.get('/cart',async(req,res)=>{
   let output = {
      totalcart:0,
      cart:[],
   }
- const memsql = `SELECT * FROM cart `;
-   [cart] = await db.query(memsql);
+const cartsql = `SELECT book_info.pic,book_info.book_name,book_info.ISBN,book_info.price,cart.count FROM cart JOIN book_info ON cart.ISBN = book_info.ISBN`;
+   [cart] = await db.query(cartsql);
     output = {...output, cart}; //取代輸出預設值 為正確數值
       return res.json(output);
+})
+router.post('/cart/plus',async(req,res)=>{
+    const ISBN = req.body.ISBN;
+    const plussql = `UPDATE cart SET count = count + 1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
+    const [updateResult] = await db.query(plussql, [currentDateTime,ISBN]);
+    console.log(updateResult);
+    const updatedCount = updateResult.affectedRows === 1 ? updateResult.changedRows : 0;
+    return res.json({ updatedCount });
+})
+
+router.post('/cart/cut',async(req,res)=>{
+  const ISBN = req.body.ISBN;
+  const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
+  const [updateResult] = await db.query(cutsql, [currentDateTime,ISBN]);
+  if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
+    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = 1`;
+    const [checkResult] = await db.query(checkSql, [ISBN]);
+    if ( checkResult[0].count < 1) {
+      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
+      const [deleteResult] = await db.query(deleteSql, [ISBN]);
+      return res.json(deleteResult)
+    }
+  }
+  return res.json(updateResult);
+})
+
+router.post('/cart/delete',async(req,res)=>{
+  const ISBN = req.body.ISBN;
+  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
+  const [deleteResult] = await db.query(deletesql, [ISBN]);
+  return res.json(deleteResult)
 })
 
 module.exports = router;
