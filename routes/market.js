@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
       rows: [], //空陣列 用於存放內容
    };
    const perPage = 16;   //處理分頁與關鍵字搜尋
-   let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的值 這邊的"keyword"是自定義的
+   let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
    let page = req.query.page ? parseInt(req.query.page) : 1; //儲存目前所在的頁數 若有page參數則轉為整數,若無則回傳一
    if (!page || page < 1) { //若'page'為undifined 或小於一
       output.redirect = req.baseUrl;
@@ -39,14 +39,20 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
 
    let where = " WHERE 1 ";
    if (keyword) {  //若有給關鍵字則執行以下  利用關鍵字在bookname、author欄位做搜尋
-      const kw_escaped = db.escape("%" + keyword + "%");//%值 % SQL語法用於模糊匹配 
+      const kw_escaped = db.escape("%" + keyword + "%");//%值 % SQL語法用於模糊匹配    .escape轉換跳脫字元
       where += ` AND ( 
            \`bookname\` LIKE ${kw_escaped}  
            OR
            \`author\` LIKE ${kw_escaped}
+           OR
+           \`ISBN\` LIKE ${kw_escaped}
            )
          `;
    }
+
+
+
+
 
    const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
    console.log(t_sql);
@@ -67,6 +73,41 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
    return res.json(output);
 });
 
+router.get("/search", async (req, res) => {
+   const category_id = req.query.label; // 從 URL 取得前端送過來的 label
+   try {
+      // 先根據 label 對照分類ID
+      // const categoryId = await category.findOne({ //.findOne 
+      //    where: {
+      //       category_name: category_name,
+      //    },
+      //    attributes: ['category_id'],
+      // });
+
+      const sql = `select * from book_info where category_id=? `
+      const [rows] = await db.query(sql, category_id)
+
+
+      if (!rows[0]) {
+         return res.status(404).json({ error: '無該分類資料' });
+      } else {
+         return res.json(rows)
+      }
+
+      // 根據分類ID擷取所有相關的商品資料
+      const relevantProducts = await book_info.findAll({
+         where: {
+            categoryId: categoryId.categoryId,
+         },
+      });
+
+      // 在這裡處理從 table 取得的商品資料，然後回傳給前端
+      res.json(relevantProducts);
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
 
 
 
