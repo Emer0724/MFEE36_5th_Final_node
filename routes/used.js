@@ -303,10 +303,29 @@ router.get('/index/book_info/',async(req,res)=>{
   //合併 result_info_sort and result_category_sort
   const combinedArray =result_info_sort.concat(result_category_sort)
   //打亂
-  shuffleArray(combinedArray);
+  // shuffleArray(combinedArray);
+  combinedArray.sort(()=>(Math.random()-.5));
 
 
   return res.json(combinedArray)
+
+})
+
+router.get('/getUsedinfo',async(req,res)=>{
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
+    
+  const sql=`select used_id,ISBN,book_name from used left join book_info using(ISBN) where member_id=? and used_state=2 and deleted is not null`
+  const [rows]=await db.query(sql,member_id)
+  return res.json(rows)
+
+
+}
 
 })
   
