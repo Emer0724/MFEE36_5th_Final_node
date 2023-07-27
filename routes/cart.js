@@ -121,33 +121,33 @@ router.post('/cart/plus',async(req,res)=>{
     return res.json({ updatedCount });
 })
 
-router.post('/cart/cut',async(req,res)=>{
+router.post('/cart/cut', async (req, res) => {
   const ISBN = req.body.ISBN;
-  console.log(122333);
-  console.log(ISBN);
-  const cutsql = `UPDATE cart SET count = count-1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
-  const [updateResult] = await db.query(cutsql, [currentDateTime,ISBN]);
-  console.log(updateResult);
+  const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
+  const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN]);
 
   if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
     const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = 1`;
     const [checkResult] = await db.query(checkSql, [ISBN]);
     const updatedCount = checkResult[0].count;
 
-    if ( updatedCount < 1) {
+    if (updatedCount < 1) {
       const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
-      const [deleteResult] = await db.query(deleteSql, [ISBN]);
-      return res.json(deleteResult)
+      await db.query(deleteSql, [ISBN]);
+      return res.json({ message: 'Item deleted from cart.' });
     }
+    return res.json({ message: 'Item quantity updated.' });
   }
-  return res.json(updateResult);
-})
+
+  return res.status(400).json({ error: 'Failed to update cart.' });
+});
+
 
 router.post('/cart/delete',async(req,res)=>{
   const ISBN = req.body.ISBN;
   const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
-  const [deleteResult] = await db.query(deletesql, [ISBN]);                        
-  return res.json(deleteResult)
+  await db.query(deletesql, [ISBN]);
+  return res.json({ message: 'Item deleted from cart.' });
 })
 
 module.exports = router;
