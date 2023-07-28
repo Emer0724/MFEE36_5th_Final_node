@@ -23,13 +23,24 @@ router.get('/display',(req,res)=>{
 
 router.get('/bookreview', async (req, res) => {
    try {
-     const query = 'SELECT book_info.book_name, book_review.score, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN';
+     const query = 'SELECT book_info.book_name, book_review.score, book_review.add_date, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN';
      const [result] = await db.query(query);
      res.json(result);
    } catch (err) {
      console.error('查詢失敗：', err);
      res.status(500).json({ error: '錯誤' });
-   }
+   }//抓書評資料
  });
+
+ router.get('/blog', async (req, res) => {
+  try {
+    const query = 'SELECT blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id';
+    const [result] = await db.query(query);
+    res.json(result);
+  } catch (err) {
+    console.error('查詢失敗：', err);
+    res.status(500).json({ error: '錯誤' });
+  }//抓部落格資料
+});
 
 module.exports = router;
