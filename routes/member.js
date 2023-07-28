@@ -20,4 +20,6 @@ const currentDateTime =moment().format('YYYY-MM-DD HH:mm:ss');
 router.get('/display',(req,res)=>{
    return res.send('member/text')
 })
+
+
 module.exports = router;

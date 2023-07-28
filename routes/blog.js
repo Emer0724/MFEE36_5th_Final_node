@@ -17,7 +17,20 @@ const currentDateTime =moment().format('YYYY-MM-DD HH:mm:ss');
 //    output.jwtData=res.locals.jwtData
 //  }
 
+
 router.get('/display',(req,res)=>{
    return res.send('blog/test')
 })
-module.exports = router;
+
+router.get('/bookreview', async (req, res) => {
+   try {
+     const query = 'SELECT * FROM book_review';
+     const result = await db.query(query);
+     res.json(result);
+   } catch (err) {
+     console.error('查詢失敗：', err);
+     res.status(500).json({ error: '錯誤' });
+   }
+ });
+ 
+ module.exports = router;
