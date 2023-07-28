@@ -149,6 +149,12 @@ router.post('/cart/delete',async(req,res)=>{
   await db.query(deletesql, [ISBN]);
   return res.json({ message: 'Item deleted from cart.' });
 })
+router.get('/cart/coupon',async(req,res)=>{
+  const member = 1;
+  const checksql = `SELECT coupon.coupon_id,coupon.coupon_discount, FROM coupon JOIN book_info ON coupon.coupon_id = .coupon_id`;
+  
+
+})
 
 module.exports = router;
 

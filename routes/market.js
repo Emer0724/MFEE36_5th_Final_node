@@ -49,11 +49,6 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
            )
          `;
    }
-
-
-
-
-
    const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
    console.log(t_sql);
    const [[{ totalRows }]] = await db.query(t_sql); //解構賦值
