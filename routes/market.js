@@ -73,36 +73,21 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
    return res.json(output);
 });
 
-router.get("/search", async (req, res) => {
-   const category_id = req.query.label; // 從 URL 取得前端送過來的 label
+router.get("/display", async (req, res) => {
+   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
    try {
-      // 先根據 label 對照分類ID
-      // const categoryId = await category.findOne({ //.findOne 
-      //    where: {
-      //       category_name: category_name,
-      //    },
-      //    attributes: ['category_id'],
-      // });
-
       const sql = `select * from book_info where category_id=? `
       const [rows] = await db.query(sql, category_id)
+      const totalRows = rows.length; // 取得資料總數
 
 
       if (!rows[0]) {
          return res.status(404).json({ error: '無該分類資料' });
       } else {
          return res.json(rows)
+         // res.json({ rows, totalRows })
+
       }
-
-      // 根據分類ID擷取所有相關的商品資料
-      const relevantProducts = await book_info.findAll({
-         where: {
-            categoryId: categoryId.categoryId,
-         },
-      });
-
-      // 在這裡處理從 table 取得的商品資料，然後回傳給前端
-      res.json(relevantProducts);
    } catch (error) {
       console.error('查詢資料庫發生錯誤', error);
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
