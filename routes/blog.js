@@ -17,20 +17,19 @@ const currentDateTime =moment().format('YYYY-MM-DD HH:mm:ss');
 //    output.jwtData=res.locals.jwtData
 //  }
 
-
 router.get('/display',(req,res)=>{
    return res.send('blog/test')
 })
 
 router.get('/bookreview', async (req, res) => {
    try {
-     const query = 'SELECT * FROM book_review';
-     const result = await db.query(query);
+     const query = 'SELECT book_info.book_name, book_review.score, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN';
+     const [result] = await db.query(query);
      res.json(result);
    } catch (err) {
      console.error('查詢失敗：', err);
      res.status(500).json({ error: '錯誤' });
    }
  });
- 
- module.exports = router;
+
+module.exports = router;
