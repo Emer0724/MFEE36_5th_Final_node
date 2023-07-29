@@ -324,7 +324,10 @@ router.get("/getUsedinfo", async (req, res) => {
 
     const sql = `select used_id,ISBN,book_name from used left join book_info using(ISBN) where member_id=? and used_state=2 and deleted is  null`;
     const [rows] = await db.query(sql, member_id);
-    return res.json(rows);
+    const sql_member =
+      "select member_id,name,mobile,email,city,district,address,full_address from member where member_id=?";
+    const [rows_member] = await db.query(sql_member, member_id);
+    return res.json([rows, rows_member]);
   }
 });
 
