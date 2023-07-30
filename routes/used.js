@@ -281,7 +281,7 @@ router.patch("/used_book/exchange/:used_id", async (req, res) => {
 
 //取書的銷量排行 sql=`select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 50`
 //取分類的排行 sql=`select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC`
-
+//取首頁資訊
 router.get("/index/book_info/", async (req, res) => {
   const sql_info = `select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 40`;
   const [result_info] = await db.query(sql_info);
@@ -298,6 +298,25 @@ router.get("/index/book_info/", async (req, res) => {
     return v;
   });
 
+  //取書評
+  const sql_bookreview = `SELECT book_review_sid,nickname,CONVERT(a.add_date, DATE) as add_date,score,pic,mem_avatar,book_review FROM book_review as a LEFT join member as b using(member_id) LEFT join book_info as c using(ISBN) ORDER BY Rand() LIMIT 9`;
+  const [result_bookreview] = await db.query(sql_bookreview);
+  const result_bookreview_final = result_bookreview.map((v, i) => {
+    let add_date_st = moment(v.add_date).format("YYYY.MM.DD");
+    return { ...v, add_date: add_date_st };
+  });
+  console.log(result_bookreview_final);
+
+  //取作品
+  const sql_blog = `SELECT blog_sid,nickname,CONVERT(a.add_date, DATE)as add_date,blog_title,blog_img,mem_avatar,blog_post FROM blog as a   LEFT join member as b using(member_id) 
+  ORDER BY Rand() LIMIT 9`;
+  const [result_blog] = await db.query(sql_blog);
+  const result_blog_final = result_blog.map((v, i) => {
+    let add_date_st = moment(v.add_date).format("YYYY年MM月DD號");
+    return { ...v, add_date: add_date_st };
+  });
+  // console.log(result_blog_final);
+
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -310,7 +329,7 @@ router.get("/index/book_info/", async (req, res) => {
   // shuffleArray(combinedArray);
   combinedArray.sort(() => Math.random() - 0.5);
 
-  return res.json(combinedArray);
+  return res.json([combinedArray, result_bookreview_final, result_blog_final]);
 });
 
 router.get("/getUsedinfo", async (req, res) => {
