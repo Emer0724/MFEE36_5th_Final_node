@@ -158,6 +158,7 @@ router.get('/cart/coupon',async(req,res)=>{
   const member = 1;
   const checksql = `
   SELECT
+  member_coupon.coupon_mid,
   member_coupon.coupon_id,
   coupon.coupon_name,
   coupon.coupon_discount
@@ -191,63 +192,62 @@ router.get("/cart/recommand",async(req,res)=>{
 })
 
 router.post('/cart/complete',async(req,res)=>{
-  const member =1 ;
-  const data = req.body;
-  const countdata = data.countData;
-  const pricefinal = data.pricefinal;//already price
-  const formdata = data.formData;
+  // const member =1 ;
+  // const data = req.body;
+  // const countdata = data.countData;
+  // const pricefinal = data.pricefinal;//already price
+  // const formdata = data.formData;
 
-  let ship, shipcost;
-  if (formdata.shippingMethod === "宅配到家+100") {
-    ship = 1;
-    shipcost = 1;
-  } else {
-    ship = 2;
-    shipcost = 2;
-  }
+  // let ship, shipcost;
+  // if (formdata.shippingMethod === "宅配到家+100") {
+  //   ship = 1;
+  //   shipcost = 1;
+  // } else {
+  //   ship = 2;
+  //   shipcost = 2;
+  // }
 
-  let payment;
-  if (formdata.paymentMethod === "linepay") {
-    payment = 2;
-  } else {
-    payment = 1;
-  }
+  // let payment;
+  // if (formdata.paymentMethod === "linepay") {
+  //   payment = 2;
+  // } else {
+  //   payment = 1;
+  // }
 
-  let coupon;
-  if(countdata.selectcoupon===1){
-    coupon = 0
-  }else{
-    coupon = countdata.selectcoupon
-  }
-  const useCouponValue = parseFloat(countdata.selectcoupon);
-  console.log(useCouponValue);
-  console.log(typeof(useCouponValue));
-  // const [selectedCouponOption,selectedCurrencyOption,selectcoupon] =[countdata]
-  // const [shippingMethod,paymentMethod,recipientName,recipientPhone,recipientAddress,recipientstore,shippingCost] =[formdata]
+  // let coupon;
+  // if(countdata.selectcoupon===1){
+  //   coupon = 0
+  // }else{
+  //   coupon = countdata.selectcoupon
+  // }
+  // const useCouponValue = parseFloat(countdata.selectcoupon);
+  // console.log(useCouponValue);
+  // console.log(typeof(useCouponValue));
+  // // const [selectedCouponOption,selectedCurrencyOption,selectcoupon] =[countdata]
+  // // const [shippingMethod,paymentMethod,recipientName,recipientPhone,recipientAddress,recipientstore,shippingCost] =[formdata]
   
-  //處理表單進order1 將如果會員使用知音幣,會員幣要清除
-  const createsql = 
-  `INSERT INTO order_1
-  (member_id,customer_name,customer_phone,customer_address,shipping,shipping_cost,choosestore,total_price,payment,status,createAt,updateAt,use_token,use_coupon)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  const [formresult] = await 
-  db.query(createsql,[member,formdata.recipientName,formdata.recipientPhone,formdata.recipientAddress,ship,shipcost,formdata.recipientstore,pricefinal,payment,1,currentDateTime,currentDateTime,countdata.selectedCurrencyOption,useCouponValue])
-  res.send(formresult) 
-  //如果會員使用知音幣,會員幣要清除
+  // //處理表單進order1 將如果會員使用知音幣,會員幣要清除
+  // const createsql = 
+  // `INSERT INTO order_1
+  // (member_id,customer_name,customer_phone,customer_address,shipping,shipping_cost,choosestore,total_price,payment,status,createAt,updateAt,use_token,use_coupon)
+  // VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  // const [formresult] = await 
+  // db.query(createsql,[member,formdata.recipientName,formdata.recipientPhone,formdata.recipientAddress,ship,shipcost,formdata.recipientstore,pricefinal,payment,1,currentDateTime,currentDateTime,countdata.selectedCurrencyOption,useCouponValue])
+  // res.send(formresult) 
+  // //如果會員使用知音幣,會員幣要清除
 
-  if(countdata.selectedCurrencyOption>0){
-    const cleansql = `UPDATE  member SET token = ? WHERE member_id = ?`
-    const cleantokenresult = db.query(cleansql,[0,member])
-  }
-  
-
-  //如果會員已使用折價卷 要從null改成顯示y
-  if(coupon>0){
-    const changestate = `UPDATE coupon_ SET `
-  }
-  
-
-  //處理cart 進 order_detail
+  // if(countdata.selectedCurrencyOption>0){
+  //   const cleansql = `UPDATE member SET token = ? WHERE member_id = ?`
+  //   const cleantokenresult = db.query(cleansql,[0,member])
+  // }
+  // //如果會員已使用折價卷 要從null改成顯示y
+  // console.log(countdata.selectcouponid);
+  // if(countdata.selectcouponid>0){
+  //   const used = "y"
+  //   const changestatesql = `UPDATE member_coupon SET 	use_status = ? WHERE member_id =? AND coupon_id = ? AND coupon_mid = ?`
+  //   const changeresult = db.query(changestatesql,[used,member,countdata.selectcouponid,countdata.selectcouponmid])
+  // }
+  // //處理cart 進 order_detail
  
   
 })
