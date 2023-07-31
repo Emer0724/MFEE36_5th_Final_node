@@ -100,6 +100,20 @@ router.get("/display", async (req, res) => {
    }
 });
 
+router.get("/detail", async (req, res) => {
+   const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
+   try {
+      const sql = `select * from book_info where ISBN=? `
+      const [rows] = await db.query(sql, ISBN)
+      return res.json({ rows })
+      // res.json({ rows, totalRows })
+   }
+   catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
+
 
 
 //[育葶大大的sample]
