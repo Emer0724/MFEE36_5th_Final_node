@@ -350,4 +350,11 @@ router.get("/getUsedinfo", async (req, res) => {
   }
 });
 
+router.get('/usedlist/:ISBN',async(req,res)=>{
+const ISBN=req.params.ISBN
+const sql=`SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`
+const [result]=await db.query(sql,ISBN)
+return res.json(result)
+})
+
 module.exports = router;
