@@ -229,17 +229,14 @@ router.patch("/display/give_up_exchange/:used_id", async (req, res) => {
 // 知音幣交易
 router.patch("/used_book/exchange/:used_id", async (req, res) => {
   output = { error: "" };
-  
+
   console.log(res.locals.jwtData);
   if (!res.locals.jwtData) {
     output.error = "沒有 token 驗證";
     return res.json(output);
   } else {
     const member_id = res.locals.jwtData.member_id;
-    const used_id = req.params.used_id
-    
-
-    
+    const used_id = req.params.used_id;
 
     const sql_member = ` select token from member where member_id=${member_id}`;
     let [token] = await db.query(sql_member);
@@ -252,47 +249,73 @@ router.patch("/used_book/exchange/:used_id", async (req, res) => {
     } else {
       token = token.token;
     }
-    console.log(token)
+    console.log(token);
 
-    const sql_used=`select price from used where used_id=? and member_id=? `
-    let [price]=await db.query(sql_used,[used_id,member_id])
+    const sql_used = `select price from used where used_id=? and member_id=? `;
+    let [price] = await db.query(sql_used, [used_id, member_id]);
     // console.log(price)
-    price = { ...price[0]}.price;
-    console.log(price)
-  
-    const used_state = 4;
- const sql_used_update=`UPDATE used SET used_state =?,updated=? where used_id=? and member_id=?`
-    const [result_used]=await db.query(sql_used_update,[used_state, currentDateTime,used_id,member_id])
-   
-    if(result_used.changedRows===1){
-      let newToken = Number(token) + price;
-      const sql_member_update=`UPDATE member SET token =?,updated=? where  member_id=?`
-      const [result_member]=await db.query(sql_member_update,[newToken,currentDateTime,member_id])
-      return res.json([result_used,result_member])
+    price = { ...price[0] }.price;
+    console.log(price);
 
+    const used_state = 4;
+    const sql_used_update = `UPDATE used SET used_state =?,updated=? where used_id=? and member_id=?`;
+    const [result_used] = await db.query(sql_used_update, [
+      used_state,
+      currentDateTime,
+      used_id,
+      member_id,
+    ]);
+
+    if (result_used.changedRows === 1) {
+      let newToken = Number(token) + price;
+      const sql_member_update = `UPDATE member SET token =?,updated=? where  member_id=?`;
+      const [result_member] = await db.query(sql_member_update, [
+        newToken,
+        currentDateTime,
+        member_id,
+      ]);
+      return res.json([result_used, result_member]);
     }
-     
   }
 });
 
 //取書的銷量排行 sql=`select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 50`
 //取分類的排行 sql=`select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM `order_detail` GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC`
+//取首頁資訊
+router.get("/index/book_info/", async (req, res) => {
+  const sql_info = `select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 40`;
+  const [result_info] = await db.query(sql_info);
+  const result_info_sort = result_info.map((v, i) => {
+    v.sort_num = i + 1;
+    v.state = "book_info";
+    return v;
+  });
+  const sql_category = `select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC limit 20`;
+  const [result_category] = await db.query(sql_category);
+  const result_category_sort = result_category.map((v, i) => {
+    v.sort_num = i + 1;
+    v.state = "category";
+    return v;
+  });
 
-router.get('/index/book_info/',async(req,res)=>{
-  const sql_info=`select sort,ISBN,book_name,author,pic from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) order by sort DESC limit 40`
-  const [result_info]=await db.query(sql_info)
-  const result_info_sort = result_info.map((v,i)=>{
-     v.sort_num=i+1;
-     v.state='book_info'
-     return v;
-  })
-  const sql_category=`select category_sort.cate_sum,a.category_id,a.category_name as sec_category,b.category_name as ft_category from (select SUM(sort) as cate_sum,category_id from book_info left join (SELECT SUM(count) AS sort ,ISBN FROM order_detail GROUP by ISBN ) as order_isbn using(ISBN) GROUP by category_id) as  category_sort LEFT JOIN category as a using (category_id) left join category as b on a.category_parentID=b.category_id ORDER by category_sort.cate_sum DESC limit 20`
-  const [result_category]=await db.query(sql_category)
-  const result_category_sort=result_category.map((v,i)=>{
-    v.sort_num=i+1;
-    v.state='category'
-    return v
-  })
+  //取書評
+  const sql_bookreview = `SELECT book_review_sid,nickname,CONVERT(a.add_date, DATE) as add_date,score,pic,mem_avatar,book_review FROM book_review as a LEFT join member as b using(member_id) LEFT join book_info as c using(ISBN) ORDER BY Rand() LIMIT 9`;
+  const [result_bookreview] = await db.query(sql_bookreview);
+  const result_bookreview_final = result_bookreview.map((v, i) => {
+    let add_date_st = moment(v.add_date).format("YYYY.MM.DD");
+    return { ...v, add_date: add_date_st };
+  });
+  // console.log(result_bookreview_final);
+
+  //取作品
+  const sql_blog = `SELECT blog_sid,nickname,CONVERT(a.add_date, DATE)as add_date,blog_title,blog_img,mem_avatar,blog_post FROM blog as a   LEFT join member as b using(member_id) 
+  ORDER BY Rand() LIMIT 9`;
+  const [result_blog] = await db.query(sql_blog);
+  const result_blog_final = result_blog.map((v, i) => {
+    let add_date_st = moment(v.add_date).format("YYYY年MM月DD號");
+    return { ...v, add_date: add_date_st };
+  });
+  // console.log(result_blog_final);
 
   function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -301,16 +324,30 @@ router.get('/index/book_info/',async(req,res)=>{
     }
   }
   //合併 result_info_sort and result_category_sort
-  const combinedArray =result_info_sort.concat(result_category_sort)
+  const combinedArray = result_info_sort.concat(result_category_sort);
   //打亂
-  shuffleArray(combinedArray);
+  // shuffleArray(combinedArray);
+  combinedArray.sort(() => Math.random() - 0.5);
 
+  return res.json([combinedArray, result_bookreview_final, result_blog_final]);
+});
 
-  return res.json(combinedArray)
+router.get("/getUsedinfo", async (req, res) => {
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
 
-})
-  
-
-
+    const sql = `select used_id,ISBN,book_name from used left join book_info using(ISBN) where member_id=? and used_state=2 and deleted is  null`;
+    const [rows] = await db.query(sql, member_id);
+    const sql_member =
+      "select member_id,name,mobile,email,city,district,address,full_address from member where member_id=?";
+    const [rows_member] = await db.query(sql_member, member_id);
+    return res.json([rows, rows_member]);
+  }
+});
 
 module.exports = router;

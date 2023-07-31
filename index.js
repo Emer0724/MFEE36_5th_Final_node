@@ -25,7 +25,7 @@ const db = require(__dirname + '/modules/mysql2')
 const sessionStore = new MysqlStore({}, db)
 const app = express();
 
-
+//白名單 CORS 處理
 app.set('view engine', 'ejs')
 const whitelist = ['http://127.0.0.1:5500/']
 const corsOptions = {
