@@ -305,7 +305,7 @@ router.get("/index/book_info/", async (req, res) => {
     let add_date_st = moment(v.add_date).format("YYYY.MM.DD");
     return { ...v, add_date: add_date_st };
   });
-  console.log(result_bookreview_final);
+  // console.log(result_bookreview_final);
 
   //取作品
   const sql_blog = `SELECT blog_sid,nickname,CONVERT(a.add_date, DATE)as add_date,blog_title,blog_img,mem_avatar,blog_post FROM blog as a   LEFT join member as b using(member_id) 
