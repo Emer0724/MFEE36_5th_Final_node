@@ -38,7 +38,7 @@ router.get('/test1',async (req, res)=>{
        }
  
        const perPage = 10;//設定每次顯示幾項
-       let keyword = req.query.keyword || '';  //關鍵字由於發時用get的 所以用query來抓字
+       let keyword = req.query.keyword || '';  //關鍵字由於發送方式是用get的 所以用query來抓字
        let page = req.query.page ? parseInt(req.query.page) : 1; //輸入第幾頁時會到第幾頁 預設是第一頁
        if(!page || page<1) {
          output.redirect = req.baseUrl; //
@@ -71,33 +71,22 @@ router.get('/test1',async (req, res)=>{
        return res.json(output);
  });
 
- router.get('/test2',async(req,res)=>{
-   let output = {
-      totalMember:0,
-      member:[],
-   }
-  const memsql = `SELECT * FROM member `;
-    [member] = await db.query(memsql);
-     output = {...output, member}; //取代輸出預設值 為正確數值
-       return res.json(output);
-})
-
-
 router.post('/addToCart',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = 1`;
-  const [checkresult] = await db.query(checksql,[ISBN])
+  const member =1;
+  const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+  const [checkresult] = await db.query(checksql,[ISBN,member])
    console.log("我是checkresult");
    console.log(checkresult);
   if(checkresult.length === 0){
-    const createsql = `INSERT INTO cart (member_id,ISBN, count, createAt,updateAt) VALUES (1,?,1,?,?)`;
-    const [result] = await db.query(createsql,[ISBN,currentDateTime,currentDateTime])
+    const createsql = `INSERT INTO cart (member_id,ISBN, count, createAt,updateAt) VALUES (?,?,1,?,?)`;
+    const [result] = await db.query(createsql,[member,ISBN,currentDateTime,currentDateTime])
     return res.json(result)
   }else{
-    const updatesql = `UPDATE cart SET count = ?, updateAt =? WHERE ISBN = ? AND member_id = 1`;
+    const updatesql = `UPDATE cart SET count = ?, updateAt =? WHERE ISBN = ? AND member_id = ?`;
     const currentCount = checkresult[0].count;
     const newCount = currentCount + 1;
-    const [updateResult] = await db.query(updatesql, [newCount,currentDateTime,ISBN]);
+    const [updateResult] = await db.query(updatesql, [newCount,currentDateTime,ISBN,member]);
    return res.json(updateResult)
   }
 })
@@ -115,25 +104,27 @@ const cartsql = `SELECT book_info.pic,book_info.book_name,book_info.ISBN,book_in
 
 router.post('/cart/plus',async(req,res)=>{
     const ISBN = req.body.ISBN;
-    const plussql = `UPDATE cart SET count = count + 1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
-    const [updateResult] = await db.query(plussql, [currentDateTime,ISBN]);
+    const member =1;
+    const plussql = `UPDATE cart SET count = count + 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
+    const [updateResult] = await db.query(plussql, [currentDateTime,ISBN,member]);
     const updatedCount = updateResult.affectedRows === 1 ? updateResult.changedRows : 0;
     return res.json({ updatedCount });
 })
 
 router.post('/cart/cut', async (req, res) => {
   const ISBN = req.body.ISBN;
-  const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = 1`;
-  const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN]);
+  const member = 1;
+  const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
+  const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN,member]);
 
   if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
-    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = 1`;
-    const [checkResult] = await db.query(checkSql, [ISBN]);
+    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+    const [checkResult] = await db.query(checkSql, [ISBN,member]);
     const updatedCount = checkResult[0].count;
 
     if (updatedCount < 1) {
-      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
-      await db.query(deleteSql, [ISBN]);
+      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
+      await db.query(deleteSql, [ISBN,member]);
       return res.json({ message: 'Item deleted from cart.' });
     }
     return res.json({ message: 'Item quantity updated.' });
@@ -145,11 +136,146 @@ router.post('/cart/cut', async (req, res) => {
 
 router.post('/cart/delete',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = 1`;
-  await db.query(deletesql, [ISBN]);
+  const member =1;
+  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
+  await db.query(deletesql, [ISBN,member]);
   return res.json({ message: 'Item deleted from cart.' });
 })
 
+router.get('/cart/coupon',async(req,res)=>{
+  const member = 1;
+  const checksql = `
+  SELECT
+  member_coupon.coupon_mid,
+  member_coupon.coupon_id,
+  coupon.coupon_name,
+  coupon.coupon_discount
+  FROM
+  member_coupon
+  JOIN
+  coupon
+  ON
+  coupon.coupon_id=member_coupon.coupon_id
+  WHERE
+  member_coupon.member_id= ?
+  AND
+  member_coupon.use_status is null`;
+  const [result] = await db.query(checksql,[member])
+  return res.json(result)
+})
+
+
+router.get('/cart/usetoken',async(req,res)=>{
+  const member = 1;
+  const checksql =`SELECT token FROM member WHERE member_id=?`;
+  const [result] = await db.query(checksql,[member])
+  return res.json(result)
+})
+
+router.get("/cart/recommand",async(req,res)=>{
+  const member =1;
+  const checksql = `SELECT book_info.ISBN,book_info.pic,book_info.book_name FROM recommand JOIN book_info ON recommand.ISBN=book_info.ISBN WHERE recommand.member_id=?`;
+  const [result] = await db.query(checksql,[member])
+  return res.json(result)
+})
+
+router.post('/cart/complete',async(req,res)=>{
+  const member =1 ;
+  const data = req.body;
+  const countdata = data.countData;
+  const pricefinal = data.pricefinal;//already price
+  const formdata = data.formData;
+
+  let ship, shipcost;
+  if (formdata.shippingMethod === "宅配到家+100") {
+    ship = 1;
+    shipcost = 1;
+  } else {
+    ship = 2;
+    shipcost = 2;
+  }
+
+  let payment;
+  if (formdata.paymentMethod === "linepay") {
+    payment = 2;
+  } else {
+    payment = 1;
+  }
+
+  let coupon;
+  if(countdata.selectcoupon===1){
+    coupon = 0
+  }else{
+    coupon = countdata.selectcoupon
+  }
+  const useCouponValue = parseFloat(countdata.selectcoupon);
+  console.log(useCouponValue);
+  console.log(typeof(useCouponValue));
+  // const [selectedCouponOption,selectedCurrencyOption,selectcoupon] =[countdata]
+  // const [shippingMethod,paymentMethod,recipientName,recipientPhone,recipientAddress,recipientstore,shippingCost] =[formdata]
+  
+  //處理表單進order1 order_id流水馬
+  function generateRandomNumber() {
+    const characters = '0123456789';
+    let code = '';
+    while (code.length < 8) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      const randomCharacter = characters.charAt(randomIndex);
+  
+      if (code.indexOf(randomCharacter) === -1) {
+        code += randomCharacter;
+      }
+    }
+    return code;
+  }
+  const randomNumber = generateRandomNumber();
+  const createsql = 
+  `INSERT INTO order_1
+  (order_id,member_id,customer_name,customer_phone,customer_address,shipping,shipping_cost,choosestore,total_price,payment,status,createAt,updateAt,use_token,use_coupon)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  const [formresult] = await 
+  db.query(createsql,[randomNumber,member,formdata.recipientName,formdata.recipientPhone,formdata.recipientAddress,ship,shipcost,formdata.recipientstore,pricefinal,payment,1,currentDateTime,currentDateTime,countdata.selectedCurrencyOption,useCouponValue])
+  res.send({ order_id: randomNumber, result: formresult });
+  //如果會員使用知音幣,會員幣要清除
+
+//   if(countdata.selectedCurrencyOption>0){
+//     const cleansql = `UPDATE member SET token = ? WHERE member_id = ?`
+//     const cleantokenresult = db.query(cleansql,[0,member])
+//   }
+//   //如果會員已使用折價卷 要從null改成顯示y
+//   console.log(countdata.selectcouponid);
+//   if(countdata.selectcouponid>0){
+//     const used = "y"
+//     const changestatesql = `UPDATE member_coupon SET 	use_status = ? WHERE member_id =? AND coupon_id = ? AND coupon_mid = ?`
+//     const changeresult = db.query(changestatesql,[used,member,countdata.selectcouponid,countdata.selectcouponmid])
+//   }
+//   //處理cart 進 order_detail
+//   const createordersql = 
+//   `INSERT INTO order_detail (ISBN, used_id, order_id, count, subtotal, createAt, updateAt)
+//   SELECT 
+//   cart.ISBN,
+//   cart.used_id, 
+//   order_1.order_id,
+//   cart.count, 
+//   cart.count * book_info.price, 
+//   ?,
+//   ?
+//   FROM cart
+//   JOIN order_1 ON cart.member_id = order_1.member_id
+//   JOIN book_info ON cart.ISBN = book_info.ISBN;`
+//   db.query(createordersql,[currentDateTime,currentDateTime])
+//   //完成後清空
+//   const clearCartSQL = `DELETE FROM cart WHERE member = ?;`;
+//   db.query(clearCartSQL,[member]);
+
+  
+})
+
+router.get('/order',(req,res)=>{
+
+})
+
+router.get('/orderdetail',(req,res)=>{
+
+})
 module.exports = router;
-
-
