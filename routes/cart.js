@@ -71,18 +71,6 @@ router.get('/test1',async (req, res)=>{
        return res.json(output);
  });
 
- router.get('/test2',async(req,res)=>{
-   let output = {
-      totalMember:0,
-      member:[],
-   }
-  const memsql = `SELECT * FROM member `;
-    [member] = await db.query(memsql);
-     output = {...output, member}; //取代輸出預設值 為正確數值
-       return res.json(output);
-})
-
-
 router.post('/addToCart',async(req,res)=>{
   const ISBN = req.body.ISBN;
   const member =1;
@@ -247,38 +235,40 @@ router.post('/cart/complete',async(req,res)=>{
   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   const [formresult] = await 
   db.query(createsql,[randomNumber,member,formdata.recipientName,formdata.recipientPhone,formdata.recipientAddress,ship,shipcost,formdata.recipientstore,pricefinal,payment,1,currentDateTime,currentDateTime,countdata.selectedCurrencyOption,useCouponValue])
-  res.send(formresult) 
+  res.send({ order_id: randomNumber, result: formresult });
   //如果會員使用知音幣,會員幣要清除
 
-  if(countdata.selectedCurrencyOption>0){
-    const cleansql = `UPDATE member SET token = ? WHERE member_id = ?`
-    const cleantokenresult = db.query(cleansql,[0,member])
-  }
-  //如果會員已使用折價卷 要從null改成顯示y
-  console.log(countdata.selectcouponid);
-  if(countdata.selectcouponid>0){
-    const used = "y"
-    const changestatesql = `UPDATE member_coupon SET 	use_status = ? WHERE member_id =? AND coupon_id = ? AND coupon_mid = ?`
-    const changeresult = db.query(changestatesql,[used,member,countdata.selectcouponid,countdata.selectcouponmid])
-  }
-  //處理cart 進 order_detail
-  const createordersql = 
-  `INSERT INTO order_detail (ISBN, used_id, order_id, count, subtotal, createAt, updateAt)
-  SELECT 
-  cart.ISBN,
-  cart.used_id, 
-  order_1.order_id,
-  cart.count, 
-  cart.count * book_info.price, 
-  ?,
-  ?
-  FROM cart
-  JOIN order_1 ON cart.member_id = order_1.member_id
-  JOIN book_info ON cart.ISBN = book_info.ISBN;`
-  const orderdetail =db.query(createordersql,[currentDateTime,currentDateTime])
-  //完成後清空
-  const clearCartSQL = `DELETE FROM cart;`;
-  db.query(clearCartSQL);
+//   if(countdata.selectedCurrencyOption>0){
+//     const cleansql = `UPDATE member SET token = ? WHERE member_id = ?`
+//     const cleantokenresult = db.query(cleansql,[0,member])
+//   }
+//   //如果會員已使用折價卷 要從null改成顯示y
+//   console.log(countdata.selectcouponid);
+//   if(countdata.selectcouponid>0){
+//     const used = "y"
+//     const changestatesql = `UPDATE member_coupon SET 	use_status = ? WHERE member_id =? AND coupon_id = ? AND coupon_mid = ?`
+//     const changeresult = db.query(changestatesql,[used,member,countdata.selectcouponid,countdata.selectcouponmid])
+//   }
+//   //處理cart 進 order_detail
+//   const createordersql = 
+//   `INSERT INTO order_detail (ISBN, used_id, order_id, count, subtotal, createAt, updateAt)
+//   SELECT 
+//   cart.ISBN,
+//   cart.used_id, 
+//   order_1.order_id,
+//   cart.count, 
+//   cart.count * book_info.price, 
+//   ?,
+//   ?
+//   FROM cart
+//   JOIN order_1 ON cart.member_id = order_1.member_id
+//   JOIN book_info ON cart.ISBN = book_info.ISBN;`
+//   db.query(createordersql,[currentDateTime,currentDateTime])
+//   //完成後清空
+//   const clearCartSQL = `DELETE FROM cart WHERE member = ?;`;
+//   db.query(clearCartSQL,[member]);
+
+  
 })
 
 router.get('/order',(req,res)=>{
