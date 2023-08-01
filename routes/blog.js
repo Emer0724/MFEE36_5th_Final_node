@@ -21,18 +21,25 @@ router.get("/display", (req, res) => {
   return res.send("blog/test");
 });
 
-router.get("/blogsort", (req, res)=> {
-    const sort = req.query.sort
-    let sql = 'SELECT * FROM blog'
-
-    if(sort === 'newest') {
-      sql += ' ORDER BY createdAt DESC'
+router.get('/blogsort/:sort', async (req, res) => {
+  try {
+    const sort = req.query.sort; // 從 query 參數中獲取排序方式
+    let sql = 'SELECT * FROM blog ';
+    console.log(sql)
+    if (sort === 'newest') {
+      sql += 'ORDER BY add_date ASC'
     } else if (sort === 'oldest') {
-      sql += ' ORDER BY createdAt ASC'
+      sql += 'ORDER BY add_date DESC'
     } else {
-      sql += ' ORDER BY createdAt DESC'
+      sql += 'ORDER BY add_date ASC'
     }
-    res.json(sortedBlogs)//部落格最新最舊切換
+
+    const result = await db.query(sql);
+    res.json(result);
+  } catch (error) {
+    console.error('查詢資料庫時出錯：', error);
+    res.status(500).json({ error: '錯誤' });
+  }
 })
 
 router.get("/follow", async (req, res) => {
