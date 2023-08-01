@@ -21,6 +21,20 @@ router.get("/display", (req, res) => {
   return res.send("blog/test");
 });
 
+router.get("/blogsort", (req, res)=> {
+    const sort = req.query.sort
+    let sql = 'SELECT * FROM blog'
+
+    if(sort === 'newest') {
+      sql += ' ORDER BY createdAt DESC'
+    } else if (sort === 'oldest') {
+      sql += ' ORDER BY createdAt ASC'
+    } else {
+      sql += ' ORDER BY createdAt DESC'
+    }
+    res.json(sortedBlogs)//部落格最新最舊切換
+})
+
 router.get("/follow", async (req, res) => {
   try {
     const query =
@@ -54,7 +68,7 @@ router.get("/blog", async (req, res) => {
   } catch (err) {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
-  }
+  } //抓部落格資料
 });
 
 router.post("/blogupload", multipartParser, async (req, res) => {
@@ -75,7 +89,7 @@ router.post("/blogupload", multipartParser, async (req, res) => {
   res.json({
     result,
     postData: req.body,
-  })//上傳部落格
+  }) //上傳部落格
 })
 
 router.post("/bookreviewupload", multipartParser, async (req, res) => {
@@ -95,7 +109,7 @@ router.post("/bookreviewupload", multipartParser, async (req, res) => {
   res.json({
     result,
     postData: req.body,
-  })//上傳書評
+  }) //上傳書評
 })
 
 module.exports = router;
