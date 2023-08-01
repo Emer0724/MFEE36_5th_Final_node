@@ -295,7 +295,6 @@ router.get('/order',async(req,res)=>{
 router.post('/orderdetail',async(req,res)=>{
   const member =1;
   const data = req.body;
-  console.log(data);
   const showitemsql = `
   SELECT 
   order_1.customer_name,
