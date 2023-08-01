@@ -246,6 +246,8 @@ app.post('/login', async (req, res) => {
         return res.json(output)
     }
 
+    console.log(req.body.email)
+
     // const sql = "SELECT * FROM members WHERE email=?";
     const sql = "SELECT * FROM member WHERE email=?";
     const [rows] = await db.query(sql, [req.body.email]);
