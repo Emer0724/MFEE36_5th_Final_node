@@ -268,12 +268,12 @@ app.post('/login', async (req, res) => {
 
     // 包 jwt 傳給前端
     const token = jwt.sign({
-        id: rows[0].member_id,
+        member_id: rows[0].member_id,
         email: rows[0].email
     }, process.env.JWT_SECRET);
 
     output.data = {
-        id: rows[0].member_id,
+        member_id: rows[0].member_id,
         email: rows[0].email,
         nickname: rows[0].nickname,
         token,
