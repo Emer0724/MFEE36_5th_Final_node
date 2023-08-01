@@ -246,7 +246,7 @@ app.post('/login', async (req, res) => {
         return res.json(output)
     }
 
-    console.log(req.body.email)
+    // console.log(req.body.email)
 
     // const sql = "SELECT * FROM members WHERE email=?";
     const sql = "SELECT * FROM member WHERE email=?";
@@ -265,6 +265,9 @@ app.post('/login', async (req, res) => {
         return res.json(output)
     }
     output.success = true;
+    const sql_used=`SELECT count(1) as notify FROM used WHERE used_state=1 and member_id=?`
+    const [notify]=await db.query(sql_used,rows[0].member_id)
+    console.log(notify)
 
     // 包 jwt 傳給前端
     const token = jwt.sign({
@@ -276,6 +279,7 @@ app.post('/login', async (req, res) => {
         member_id: rows[0].member_id,
         email: rows[0].email,
         nickname: rows[0].nickname,
+        notify:notify[0].notify,
         token,
     }
     res.json(output)
