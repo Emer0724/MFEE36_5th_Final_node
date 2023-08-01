@@ -292,8 +292,10 @@ router.get('/order',async(req,res)=>{
  res.send(result);
 })
 
-router.get('/orderdetail',async(req,res)=>{
+router.post('/orderdetail',async(req,res)=>{
   const member =1;
+  const data = req.body;
+  console.log(data);
   const showitemsql = `
   SELECT 
   order_1.customer_name,
@@ -321,10 +323,11 @@ router.get('/orderdetail',async(req,res)=>{
   ON
   order_detail.ISBN = book_info.ISBN
   WHERE
-  order_1.member_id =?;
+  order_1.member_id =?
+  AND
+  order_detail.order_id = ?;
  `
-  
- const [result] = await db.query(showitemsql,[member])
+ const [result] = await db.query(showitemsql,[member,data.orderid])
  res.send(result)
 })
 
