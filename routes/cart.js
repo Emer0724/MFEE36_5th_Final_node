@@ -319,10 +319,13 @@ router.get('/orderdetail',async(req,res)=>{
   JOIN
   book_info
   ON
-  order_detail.ISBN =  book_info.ISBN
+  order_detail.ISBN = book_info.ISBN
   WHERE
-  order_1.member_id =?;`
- await db.query(showitemsql,[member])
+  order_1.member_id =?;
+  AND`
+  
+ const [result] = await db.query(showitemsql,[member])
+ res.send(result)
 })
 
 module.exports = router;
