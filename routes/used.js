@@ -5,6 +5,7 @@ const { query } = require("../modules/mysql2");
 const db = require(__dirname + "/../modules/mysql2");
 const router = express.Router();
 const upload = require(__dirname + "/../modules/img-upload");
+const upload_avatar = require(__dirname + "/../modules/img-upload_avatar");
 const multipartParser = upload.none();
 const moment = require("moment-timezone");
 //寫入 時間用 currentDateTime
@@ -355,6 +356,21 @@ const ISBN=req.params.ISBN
 const sql=`SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`
 const [result]=await db.query(sql,ISBN)
 return res.json(result)
+})
+
+router.post('/upload',upload_avatar.single('avatar'),async(req,res)=>{
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
+  const sql=`UPDATE member SET mem_avatar=?,updated =? where member_id=?`
+  const[result]=await db.query(sql,[req.file.filename,currentDateTime,member_id])
+  console.log(req.file.filename)
+  
+    return res.json([req.file,result]);}
 })
 
 module.exports = router;

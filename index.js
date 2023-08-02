@@ -12,6 +12,7 @@ if (process.argv[2] === 'production') {
 // const multer = require('multer');
 // const upload = multer({dest:'tmp_uploads/'});
 const upload = require(__dirname + '/modules/img-upload');
+const upload_avatar = require(__dirname + '/modules/img-upload_avatar');
 const express = require('express');
 
 const session = require('express-session');
@@ -280,6 +281,8 @@ app.post('/login', async (req, res) => {
         email: rows[0].email,
         nickname: rows[0].nickname,
         notify:notify[0].notify,
+        name:rows[0].name,
+        mem_avatar:rows[0].mem_avatar,
         token,
     }
     res.json(output)
