@@ -115,11 +115,26 @@ router.get("/detail", async (req, res) => {
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
 });
+//麵包屑取值
+router.get("/bcs", async (req, res) => {
+   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
+   try {
+      const sql = `select * from category where category_id=? `
+      const [rows] = await db.query(sql, category_id)
+      return res.json({ rows })
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
+
+
+
+
 //收藏功能
 router.post("/recommand", async (req, res) => {
    const { member_id, ISBN } = req.body
-   console.log('沒有共產黨就沒有新中國')
-   console.log(typeof (member_id))
+   console.log(member_id)
    try {
       const [rows] = await db.query(`SELECT * FROM recommand WHERE ISBN='${ISBN}' AND member_id=${member_id};`)
 
@@ -134,7 +149,7 @@ router.post("/recommand", async (req, res) => {
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
 })
-
+//收藏功能--刪除
 router.delete("/recommand", async (req, res) => {
    const { member_id, ISBN } = req.body
    try {
