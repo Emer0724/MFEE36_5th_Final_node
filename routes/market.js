@@ -135,6 +135,23 @@ router.post("/recommand", async (req, res) => {
    }
 })
 
+router.delete("/recommand", async (req, res) => {
+   const { member_id, ISBN } = req.body
+   try {
+      await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
+      return res.json({ message: "刪除成功" });
+   } catch {
+      console.error('刪除資料庫發生錯誤', error);
+      res.status(500).json({ error: '刪除資料庫發生錯誤' });
+   }
+})
+
+
+// await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id} `)
+//          console.log(123)
+//          console.log(member_id)
+
+
 
 //沒用到
 // router.get('/book_category', async (req, res) => {
