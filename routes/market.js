@@ -8,7 +8,8 @@ const multipartParser = upload.none();
 const moment = require('moment-timezone');
 //寫入 時間用 currentDateTime
 const date = new Date
-const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
+
+const currentDateTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
 //token驗證
 // if(! res.locals.jwtData){
 //    output.error = '沒有 token 驗證'
@@ -19,7 +20,7 @@ const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
 
 
 
-
+//關鍵字搜尋(未完成)
 router.get("/", async (req, res) => {  //處理GET請求時執行async
    let output = {
       redirect: "", //重新導向
@@ -72,7 +73,7 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
 
 
 
-
+//主頁展示
 router.get("/display", async (req, res) => {
    const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
    const label = req.query.label;
@@ -100,6 +101,7 @@ router.get("/display", async (req, res) => {
    }
 });
 
+//詳細頁資料
 router.get("/detail", async (req, res) => {
    const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
    try {
@@ -113,57 +115,73 @@ router.get("/detail", async (req, res) => {
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
 });
-
-
-
-//[育葶大大的sample]
-router.get('/book_category', async (req, res) => {
+//收藏功能
+router.post("/recommand", async (req, res) => {
+   const { member_id, ISBN } = req.body
+   console.log('沒有共產黨就沒有新中國')
+   console.log(typeof (member_id))
    try {
-      const sql = `
-  SELECT a.category_id,a.category_name,a.category_parentID,b.category_name as ft_category_name FROM category as a left join category as b on a.category_parentID=b.category_id`
-      const [rows] = await db.query(sql)
-      res.json(rows);
-   } catch (err) {
+      const [rows] = await db.query(`SELECT * FROM recommand WHERE ISBN='${ISBN}' AND member_id=${member_id};`)
 
+      if (rows.length === 0) {
+         await db.query(`INSERT INTO recommand (ISBN, member_id, created_date, updated) VALUES (?, ?, ?, ?)`, [ISBN, member_id, currentDateTime, currentDateTime]);
+         ; //若無這筆 就新增
+      } else { }
+
+      return res.json({ rows })
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
-
 })
 
 
+//沒用到
+// router.get('/book_category', async (req, res) => {
+//    try {
+//       const sql = `
+//   SELECT a.category_id,a.category_name,a.category_parentID,b.category_name as ft_category_name FROM category as a left join category as b on a.category_parentID=b.category_id`
+//       const [rows] = await db.query(sql)
+//       res.json(rows);
+//    } catch (err) {
 
-router.get("/:ISBN", async (req, res) => {
-   const output = {
-      success: false,
-      error: "",
-      row: null,
-   };
-   const ISBN = parseInt(req.params.ISBN) || 0;
-   if (!ISBN) {
-      // 沒有 sid
-      output.error = "沒有 sid !";
-   } else {
-      const sql = `SELECT * FROM book_info WHERE ISBN=${ISBN}`;
-      const [rows] = await db.query(sql);
+//    }
 
-      if (rows.length) {
-         output.success = true;
-         output.row = rows[0];
-      } else {
-         // 沒有資料
-         output.error = "沒有資料 !";
-      }
-   }
-   res.json(output);
-});
+// })
 
+// router.get("/:ISBN", async (req, res) => {
+//    const output = {
+//       success: false,
+//       error: "",
+//       row: null,
+//    };
+//    const ISBN = parseInt(req.params.ISBN) || 0;
+//    if (!ISBN) {
+//       // 沒有 sid
+//       output.error = "沒有 sid !";
+//    } else {
+//       const sql = `SELECT * FROM book_info WHERE ISBN=${ISBN}`;
+//       const [rows] = await db.query(sql);
 
-
-
-
-
+//       if (rows.length) {
+//          output.success = true;
+//          output.row = rows[0];
+//       } else {
+//          // 沒有資料
+//          output.error = "沒有資料 !";
+//       }
+//    }
+//    res.json(output);
+// });
 
 
 
+
+
+
+
+
+//錯誤頁面
 router.get('/error', (req, res) => {
    db.query('SELECT * FROM book_info', (err, results) => {
       if (err) {
