@@ -71,9 +71,9 @@ router.get('/test1',async (req, res)=>{
        return res.json(output);
  });
 
-router.post('/addToCart',async(req,res)=>{
+ router.post('/addToCart',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const member =1;
+  const member =req.body.member;
   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
   const [checkresult] = await db.query(checksql,[ISBN,member])
   if(checkresult.length === 0){
@@ -89,8 +89,8 @@ router.post('/addToCart',async(req,res)=>{
   }
 })
 
-router.get('/cart',async(req,res)=>{
-  const member = 1;
+router.post('/cart',async(req,res)=>{
+  const member = req.body.member;
   const cartsql = `SELECT 
   book_info.pic,
   book_info.book_name,
@@ -111,7 +111,7 @@ router.get('/cart',async(req,res)=>{
 
 router.post('/cart/plus',async(req,res)=>{
     const ISBN = req.body.ISBN;
-    const member =1;
+    const member = req.body.member;
     const plussql = `UPDATE cart SET count = count + 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
     const [updateResult] = await db.query(plussql, [currentDateTime,ISBN,member]);
     const updatedCount = updateResult.affectedRows === 1 ? updateResult.changedRows : 0;
@@ -120,7 +120,7 @@ router.post('/cart/plus',async(req,res)=>{
 
 router.post('/cart/cut', async (req, res) => {
   const ISBN = req.body.ISBN;
-  const member = 1;
+  const member = req.body.member;
   const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
   const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN,member]);
 
@@ -142,14 +142,14 @@ router.post('/cart/cut', async (req, res) => {
 
 router.post('/cart/delete',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const member =1;
+  const member = req.body.member;
   const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
   await db.query(deletesql, [ISBN,member]);
  res.json({ message: 'Item deleted from cart.' });
 })
 
-router.get('/cart/coupon',async(req,res)=>{
-  const member = 1;
+router.post('/cart/coupon',async(req,res)=>{
+  const member = req.body.member;
   const checksql = `
   SELECT
   member_coupon.coupon_mid,
@@ -167,20 +167,20 @@ router.get('/cart/coupon',async(req,res)=>{
   AND
   member_coupon.use_status is null`;
   const [result] = await db.query(checksql,[member])
-   res.json(result)
+  res.send(result)
 })
-router.get('/cart/usetoken',async(req,res)=>{
-  const member = 1;
+router.post('/cart/usetoken',async(req,res)=>{
+  const member = req.body.member;
   const checksql =`SELECT token FROM member WHERE member_id=?`;
   const [result] = await db.query(checksql,[member])
-  res.json(result)
+  res.send(result)
 })
 
-router.get("/cart/recommand",async(req,res)=>{
-  const member =1;
+router.post("/cart/recommand",async(req,res)=>{
+  const member = req.body.member;
   const checksql = `SELECT book_info.ISBN,book_info.pic,book_info.book_name FROM recommand JOIN book_info ON recommand.ISBN=book_info.ISBN WHERE recommand.member_id=?`;
   const [result] = await db.query(checksql,[member])
-   res.json(result)
+  res.json(result)
 })
 
 router.post('/cart/complete',async(req,res)=>{
