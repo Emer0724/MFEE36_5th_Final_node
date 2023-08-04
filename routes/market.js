@@ -163,6 +163,8 @@ router.delete("/recommand", async (req, res) => {
 //加入購物車
 router.post('/addToCart', async (req, res) => {
    const { member_id, ISBN } = req.body; // 從請求中取得 member_id 和 ISBN
+   console.log(member_id)
+   console.log(ISBN)
    const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
    const [checkresult] = await db.query(checksql, [ISBN, member_id]);
    if (checkresult.length === 0) {
@@ -177,6 +179,7 @@ router.post('/addToCart', async (req, res) => {
       res.json(updateResult);
    }
 });
+
 //usedList
 router.get("/usedList", async (req, res) => {
    const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
