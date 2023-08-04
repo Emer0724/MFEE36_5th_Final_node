@@ -12,6 +12,7 @@ if (process.argv[2] === 'production') {
 // const multer = require('multer');
 // const upload = multer({dest:'tmp_uploads/'});
 const upload = require(__dirname + '/modules/img-upload');
+const upload_avatar = require(__dirname + '/modules/img-upload_avatar');
 const express = require('express');
 
 const session = require('express-session');
@@ -246,7 +247,7 @@ app.post('/login', async (req, res) => {
         return res.json(output)
     }
 
-    console.log(req.body.email)
+    // console.log(req.body.email)
 
     // const sql = "SELECT * FROM members WHERE email=?";
     const sql = "SELECT * FROM member WHERE email=?";
@@ -265,6 +266,9 @@ app.post('/login', async (req, res) => {
         return res.json(output)
     }
     output.success = true;
+    const sql_used=`SELECT count(1) as notify FROM used WHERE used_state=1 and member_id=?`
+    const [notify]=await db.query(sql_used,rows[0].member_id)
+    console.log(notify)
 
     // 包 jwt 傳給前端
     const token = jwt.sign({
@@ -276,6 +280,9 @@ app.post('/login', async (req, res) => {
         member_id: rows[0].member_id,
         email: rows[0].email,
         nickname: rows[0].nickname,
+        notify:notify[0].notify,
+        name:rows[0].name,
+        mem_avatar:rows[0].mem_avatar,
         token,
     }
     res.json(output)
