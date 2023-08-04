@@ -104,7 +104,7 @@ router.get('/cart',async(req,res)=>{
   ON cart.ISBN = book_info.ISBN 
   WHERE cart.member_id = ?`;
   const [result] = await db.query(cartsql, [member]);
-  res.json(result);
+  res.send(result);
 })
 
 router.put('/cart/plus',async(req,res)=>{
@@ -190,8 +190,17 @@ router.get("/cart/recommand",async(req,res)=>{
   res.json(result)
 })
 
+router.get('/cartmember', async (req, res) => {
+  const member = req.query.member;
+  const checksql = `SELECT name,mobile,city,district,address from member where member_id=?`
+  const [result] = await db.query(checksql, [member]); // 使用 await 等待資料庫查詢完成
+  res.json(result); // 回傳 JSON 格式的資料
+});
+
+
 router.post('/cart/complete',async(req,res)=>{
-  const member =1 ;
+  const member =req.body.member;
+  console.log(member);
   const data = req.body;
   const countdata = data.countData;
   const pricefinal = data.pricefinal;//already price
