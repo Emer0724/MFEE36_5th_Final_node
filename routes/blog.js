@@ -93,6 +93,19 @@ router.get("/:blogsid", async (req, res) => {
   }
 });
 
+router.get("/checklike/:blog_sid", async (req, res) => {
+  try {
+    const blog_sid = req.params.blog_sid;
+    const query = "SELECT COUNT(*) AS count FROM `like` WHERE blog_sid = ?";
+    const [result] = await db.query(query, [blog_sid]);
+    const isAdded = result[0].count > 0;
+    return res.json({ isAdded });
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  }//檢查有沒有最愛這筆資料
+});
+
 router.post("/like/:userId", multipartParser, async (req, res) => {
   const data = req.body;
   console.log(req.body);
@@ -130,6 +143,58 @@ router.delete('/deletelike/:userId', async (req, res) => {
   }//取消最愛
 })
 
+router.get("/looklike/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT like1.member_id, like1.blog_id, member.nickname, member.mem_avatar, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date FROM like1 INNER JOIN blog ON like1.blog_id = blog.blog_sid INNER JOIN member ON blog.member_id = member.member_id WHERE like1.member_id = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //查詢個人頁最愛
+});
+
+router.get("/looktrack/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT track.member1_id, track.member2_id, member.nickname, member.mem_avatar FROM track INNER JOIN member ON track.member2_id = member.member_id WHERE track.member1_id = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //查詢個人頁追蹤
+});
+
+router.get("/lookblog/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.member_id, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id WHERE blog.member_id = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //查詢個人頁作品
+});
+
+router.get("/lookbook/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.ISBN, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.member_id = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //查詢個人頁書評
+});
+
 router.post("/track/:userId", multipartParser, async (req, res) => {
   const data = req.body;
   console.log(req.body);
@@ -145,7 +210,7 @@ router.post("/track/:userId", multipartParser, async (req, res) => {
     result,
     postData: req.body,
   })//追蹤
-});
+})
 
 router.delete('/deletetrack/:userId', async (req, res) => {
   const member2_id = req.params.userId;
@@ -178,6 +243,36 @@ router.get("/nav/follow", async (req, res) => {
     res.status(500).json({ error: "錯誤" });
   } //抓追隨列表資料
 });
+
+router.get("/nav/like/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const query = `
+      SELECT COUNT(*) AS likeCount
+      FROM like1
+      WHERE member_id = ?`;
+    const [result] = await db.query(query, [userId]);
+    return res.json(result[0].likeCount);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  }//抓最愛總數
+})
+
+router.get("/nav/track/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const query = `
+      SELECT COUNT(*) AS trackCount
+      FROM track
+      WHERE member1_id = ?`;
+    const [result] = await db.query(query, [userId]);
+    return res.json(result[0].trackCount);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  }//抓追蹤總數
+})
 
 router.post("/reply/upload", multipartParser, async (req, res) => {
   const data = req.body;
@@ -233,5 +328,17 @@ router.post("/bookreview/upload", multipartParser, async (req, res) => {
     postData: req.body,
   }); //上傳書評
 });
+
+// const [memberData, setMemberData] = useState([])
+
+// useEffect(() => {
+//   // 從本地儲存空間獲取會員資料
+//   const storedMemberData = localStorage.getItem('auth')
+
+//   if (storedMemberData) {
+//     const parsedMemberData = JSON.parse(storedMemberData)
+//     setMemberData(parsedMemberData)
+//   }
+// }, [])
 
 module.exports = router;
