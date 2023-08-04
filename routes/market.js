@@ -8,7 +8,8 @@ const multipartParser = upload.none();
 const moment = require('moment-timezone');
 //寫入 時間用 currentDateTime
 const date = new Date
-const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
+
+const currentDateTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
 //token驗證
 // if(! res.locals.jwtData){
 //    output.error = '沒有 token 驗證'
@@ -19,7 +20,7 @@ const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
 
 
 
-
+//關鍵字搜尋(未完成)
 router.get("/", async (req, res) => {  //處理GET請求時執行async
    let output = {
       redirect: "", //重新導向
@@ -72,7 +73,7 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
 
 
 
-
+//主頁展示
 router.get("/display", async (req, res) => {
    const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
    const label = req.query.label;
@@ -100,6 +101,7 @@ router.get("/display", async (req, res) => {
    }
 });
 
+//詳細頁資料
 router.get("/detail", async (req, res) => {
    const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
    try {
@@ -113,47 +115,79 @@ router.get("/detail", async (req, res) => {
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
 });
-
-
-
-//[育葶大大的sample]
-router.get('/book_category', async (req, res) => {
+//麵包屑取值
+router.get("/bcs", async (req, res) => {
+   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
    try {
-      const sql = `
-  SELECT a.category_id,a.category_name,a.category_parentID,b.category_name as ft_category_name FROM category as a left join category as b on a.category_parentID=b.category_id`
-      const [rows] = await db.query(sql)
-      res.json(rows);
-   } catch (err) {
-
+      const sql = `select * from category where category_id=? `
+      const [rows] = await db.query(sql, category_id)
+      return res.json({ rows })
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
    }
+});
 
+
+
+
+//收藏功能
+router.post("/recommand", async (req, res) => {
+   const { member_id, ISBN } = req.body
+   console.log(member_id)
+   try {
+      const [rows] = await db.query(`SELECT * FROM recommand WHERE ISBN='${ISBN}' AND member_id=${member_id};`)
+
+      if (rows.length === 0) {
+         await db.query(`INSERT INTO recommand (ISBN, member_id, created_date, updated) VALUES (?, ?, ?, ?)`, [ISBN, member_id, currentDateTime, currentDateTime]);
+         ; //若無這筆 就新增
+      } else { }
+
+      return res.json({ rows })
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
 })
-
-
-
-router.get("/:ISBN", async (req, res) => {
-   const output = {
-      success: false,
-      error: "",
-      row: null,
-   };
-   const ISBN = parseInt(req.params.ISBN) || 0;
-   if (!ISBN) {
-      // 沒有 sid
-      output.error = "沒有 sid !";
-   } else {
-      const sql = `SELECT * FROM book_info WHERE ISBN=${ISBN}`;
-      const [rows] = await db.query(sql);
-
-      if (rows.length) {
-         output.success = true;
-         output.row = rows[0];
-      } else {
-         // 沒有資料
-         output.error = "沒有資料 !";
-      }
+//收藏功能--刪除
+router.delete("/recommand", async (req, res) => {
+   const { member_id, ISBN } = req.body
+   try {
+      await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
+      return res.json({ message: "刪除成功" });
+   } catch {
+      console.error('刪除資料庫發生錯誤', error);
+      res.status(500).json({ error: '刪除資料庫發生錯誤' });
    }
-   res.json(output);
+})
+//加入購物車
+router.post('/addToCart', async (req, res) => {
+   const { member_id, ISBN } = req.body; // 從請求中取得 member_id 和 ISBN
+   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+   const [checkresult] = await db.query(checksql, [ISBN, member_id]);
+   if (checkresult.length === 0) {
+      const createsql = `INSERT INTO cart (member_id, ISBN, count, createAt, updateAt) VALUES (?, ?, 1, ?, ?)`;
+      const [result] = await db.query(createsql, [member_id, ISBN, currentDateTime, currentDateTime]);
+      res.json(result);
+   } else {
+      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
+      const currentCount = checkresult[0].count;
+      const newCount = currentCount + 1;
+      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id]);
+      res.json(updateResult);
+   }
+});
+//usedList
+router.get("/usedList", async (req, res) => {
+   const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
+   try {
+      const sql = `select * from used where ISBN=? `
+      const [rows] = await db.query(sql, [ISBN])
+      return res.json([rows])
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
 });
 
 
@@ -164,6 +198,8 @@ router.get("/:ISBN", async (req, res) => {
 
 
 
+
+//錯誤頁面
 router.get('/error', (req, res) => {
    db.query('SELECT * FROM book_info', (err, results) => {
       if (err) {
