@@ -71,9 +71,9 @@ router.get('/test1',async (req, res)=>{
        return res.json(output);
  });
 
-router.post('/addToCart',async(req,res)=>{
+ router.post('/addToCart',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const member =1;
+  const member =req.body.member;
   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
   const [checkresult] = await db.query(checksql,[ISBN,member])
   if(checkresult.length === 0){
@@ -90,8 +90,10 @@ router.post('/addToCart',async(req,res)=>{
 })
 
 router.get('/cart',async(req,res)=>{
-  const member = 1;
+  const member = req.query.member;
+  console.log(member);
   const cartsql = `SELECT 
+  cart.member_id,
   book_info.pic,
   book_info.book_name,
   book_info.ISBN,
@@ -101,90 +103,104 @@ router.get('/cart',async(req,res)=>{
   JOIN book_info 
   ON cart.ISBN = book_info.ISBN 
   WHERE cart.member_id = ?`;
-  const [cart] = await db.query(cartsql, [member]);
-  const output = {
-    cart
-  };
-  console.log(output);
-  res.json(output);
+  const [result] = await db.query(cartsql, [member]);
+  res.send(result);
 })
 
-router.post('/cart/plus',async(req,res)=>{
+router.put('/cart/plus',async(req,res)=>{
     const ISBN = req.body.ISBN;
-    const member =1;
+    const member = req.body.member;
     const plussql = `UPDATE cart SET count = count + 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
     const [updateResult] = await db.query(plussql, [currentDateTime,ISBN,member]);
-    const updatedCount = updateResult.affectedRows === 1 ? updateResult.changedRows : 0;
-    res.json({ updatedCount });
-})
-
-router.post('/cart/cut', async (req, res) => {
-  const ISBN = req.body.ISBN;
-  const member = 1;
-  const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
-  const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN,member]);
-
-  if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
-    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
-    const [checkResult] = await db.query(checkSql, [ISBN,member]);
-    const updatedCount = checkResult[0].count;
-
-    if (updatedCount < 1) {
-      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
-      await db.query(deleteSql, [ISBN,member]);
-      res.json({ message: 'Item deleted from cart.' });
+    if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
+      const cartQuantitySql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+      const [selectedItem] = await db.query(cartQuantitySql, [ISBN, member]);
+      const updatedCount = selectedItem[0]?.count || 0;
+      res.json({ updatedCount });
+    } else {
+      res.status(500).json({ error: "抓取失敗" });
     }
-     res.json({ message: 'Item quantity updated.' });
-  }
-  res.status(400).json({ error: 'Failed to update cart.' });
-});
+  });
+
+  router.put('/cart/cut', async (req, res) => {
+    const ISBN = req.body.ISBN;
+    const member = req.body.member;
+    const cutsql = `UPDATE cart SET count = count - 1, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
+    const [updateResult] = await db.query(cutsql, [currentDateTime, ISBN, member]);
+  
+    if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
+      const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+      const [checkResult] = await db.query(checkSql, [ISBN, member]);
+      const updatedCount = checkResult[0].count;
+      if (updatedCount > 0) {
+        res.json({ message: '商品已減少.' });
+      }else {
+        const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
+        await db.query(deleteSql, [ISBN, member]);
+        res.json({ message: '商品已刪除' });
+      }
+    } else {
+      res.status(400).json({ error: '更新失敗' });
+    }
+  });
 
 
 router.post('/cart/delete',async(req,res)=>{
   const ISBN = req.body.ISBN;
-  const member =1;
+  const member = req.body.member;
   const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
   await db.query(deletesql, [ISBN,member]);
- res.json({ message: 'Item deleted from cart.' });
+  res.json({ message: 'Item deleted from cart.' });
 })
 
-router.get('/cart/coupon',async(req,res)=>{
-  const member = 1;
+router.get('/cart/coupon', async (req, res) => {
+  const member = req.query.member; // 获取查询参数 member 的值
   const checksql = `
-  SELECT
-  member_coupon.coupon_mid,
-  member_coupon.coupon_id,
-  coupon.coupon_name,
-  coupon.coupon_discount
-  FROM
-  member_coupon
-  JOIN
-  coupon
-  ON
-  coupon.coupon_id=member_coupon.coupon_id
-  WHERE
-  member_coupon.member_id= ?
-  AND
-  member_coupon.use_status is null`;
-  const [result] = await db.query(checksql,[member])
-   res.json(result)
-})
-router.get('/cart/usetoken',async(req,res)=>{
-  const member = 1;
-  const checksql =`SELECT token FROM member WHERE member_id=?`;
+    SELECT
+      member_coupon.coupon_mid,
+      member_coupon.coupon_id,
+      coupon.coupon_name,
+      coupon.coupon_discount
+      FROM
+      member_coupon
+      JOIN
+      coupon
+      ON
+      coupon.coupon_id=member_coupon.coupon_id
+      WHERE
+      member_coupon.member_id= ?
+      AND
+      member_coupon.use_status is null`;
+  const [result] = await db.query(checksql, [member]);
+  res.send(result);
+});
+
+router.get('/cart/usetoken', async (req, res) => {
+  const member = req.query.member; // 获取查询参数 member 的值
+  const checksql = `SELECT token FROM member WHERE member_id=?`;
+  const [result] = await db.query(checksql, [member]);
+  res.send(result);
+});
+
+
+router.get("/cart/recommand",async(req,res)=>{
+  const member = req.query.member;
+  const checksql = `SELECT book_info.ISBN,book_info.pic,book_info.book_name FROM recommand JOIN book_info ON recommand.ISBN=book_info.ISBN WHERE recommand.member_id=?`;
   const [result] = await db.query(checksql,[member])
   res.json(result)
 })
 
-router.get("/cart/recommand",async(req,res)=>{
-  const member =1;
-  const checksql = `SELECT book_info.ISBN,book_info.pic,book_info.book_name FROM recommand JOIN book_info ON recommand.ISBN=book_info.ISBN WHERE recommand.member_id=?`;
-  const [result] = await db.query(checksql,[member])
-   res.json(result)
-})
+router.get('/cartmember', async (req, res) => {
+  const member = req.query.member;
+  const checksql = `SELECT name,mobile,city,district,address from member where member_id=?`
+  const [result] = await db.query(checksql, [member]); // 使用 await 等待資料庫查詢完成
+  res.json(result); // 回傳 JSON 格式的資料
+});
+
 
 router.post('/cart/complete',async(req,res)=>{
-  const member =1 ;
+  const member =req.body.member;
+  console.log(member);
   const data = req.body;
   const countdata = data.countData;
   const pricefinal = data.pricefinal;//already price
