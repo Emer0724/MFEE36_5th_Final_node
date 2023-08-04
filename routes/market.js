@@ -160,51 +160,37 @@ router.delete("/recommand", async (req, res) => {
       res.status(500).json({ error: '刪除資料庫發生錯誤' });
    }
 })
+//加入購物車
+router.post('/addToCart', async (req, res) => {
+   const { member_id, ISBN } = req.body; // 從請求中取得 member_id 和 ISBN
+   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+   const [checkresult] = await db.query(checksql, [ISBN, member_id]);
+   if (checkresult.length === 0) {
+      const createsql = `INSERT INTO cart (member_id, ISBN, count, createAt, updateAt) VALUES (?, ?, 1, ?, ?)`;
+      const [result] = await db.query(createsql, [member_id, ISBN, currentDateTime, currentDateTime]);
+      res.json(result);
+   } else {
+      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ?`;
+      const currentCount = checkresult[0].count;
+      const newCount = currentCount + 1;
+      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id]);
+      res.json(updateResult);
+   }
+});
+//usedList
+router.get("/usedList", async (req, res) => {
+   const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
+   try {
+      const sql = `select * from used where ISBN=? `
+      const [rows] = await db.query(sql, [ISBN])
+      return res.json([rows])
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
 
 
-// await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id} `)
-//          console.log(123)
-//          console.log(member_id)
-
-
-
-//沒用到
-// router.get('/book_category', async (req, res) => {
-//    try {
-//       const sql = `
-//   SELECT a.category_id,a.category_name,a.category_parentID,b.category_name as ft_category_name FROM category as a left join category as b on a.category_parentID=b.category_id`
-//       const [rows] = await db.query(sql)
-//       res.json(rows);
-//    } catch (err) {
-
-//    }
-
-// })
-
-// router.get("/:ISBN", async (req, res) => {
-//    const output = {
-//       success: false,
-//       error: "",
-//       row: null,
-//    };
-//    const ISBN = parseInt(req.params.ISBN) || 0;
-//    if (!ISBN) {
-//       // 沒有 sid
-//       output.error = "沒有 sid !";
-//    } else {
-//       const sql = `SELECT * FROM book_info WHERE ISBN=${ISBN}`;
-//       const [rows] = await db.query(sql);
-
-//       if (rows.length) {
-//          output.success = true;
-//          output.row = rows[0];
-//       } else {
-//          // 沒有資料
-//          output.error = "沒有資料 !";
-//       }
-//    }
-//    res.json(output);
-// });
 
 
 
