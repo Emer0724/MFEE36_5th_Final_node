@@ -351,14 +351,14 @@ router.get("/getUsedinfo", async (req, res) => {
   }
 });
 
-router.get('/usedlist/:ISBN',async(req,res)=>{
-const ISBN=req.params.ISBN
-const sql=`SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`
-const [result]=await db.query(sql,ISBN)
-return res.json(result)
-})
+router.get("/usedlist/:ISBN", async (req, res) => {
+  const ISBN = req.params.ISBN;
+  const sql = `SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`;
+  const [result] = await db.query(sql, ISBN);
+  return res.json(result);
+});
 
-router.post('/upload',upload_avatar.single('avatar'),async(req,res)=>{
+router.post("/upload", upload_avatar.single("avatar"), async (req, res) => {
   output = { error: "" };
   console.log(res.locals.jwtData);
   if (!res.locals.jwtData) {
@@ -366,11 +366,49 @@ router.post('/upload',upload_avatar.single('avatar'),async(req,res)=>{
     return res.json(output);
   } else {
     member_id = res.locals.jwtData.member_id;
-  const sql=`UPDATE member SET mem_avatar=?,updated =? where member_id=?`
-  const[result]=await db.query(sql,[req.file.filename,currentDateTime,member_id])
-  console.log(req.file.filename)
-  
-    return res.json([req.file,result]);}
-})
+    const sql = `UPDATE member SET mem_avatar=?,updated =? where member_id=?`;
+    const [result] = await db.query(sql, [
+      req.file.filename,
+      currentDateTime,
+      member_id,
+    ]);
+    console.log(req.file.filename);
+
+    return res.json([req.file, result]);
+  }
+});
+
+router.post("/backstage_info", async (req, res) => {
+  const data = { ...req.body };
+  const ISBN = JSON.parse(data.ISBN);
+  const ISBN_1 = ISBN.join(",");
+  console.log(ISBN_1);
+  const sql = `select a.*,b.book_name,b.price as original_price ,b.pic  from used as a join book_info as b using(ISBN) where used_id in(${ISBN_1})`;
+  const [result] = await db.query(sql);
+  // console.log(data.ISBN);
+  // console.log(result);
+  console.log(result);
+  return res.json(result);
+});
+
+router.post("/updisplay", async (req, res) => {
+  const data = { ...req.body };
+  if (data.used_state === 3) {
+    return_book = 1;
+  } else {
+    return_book = null;
+  }
+  const sql = `UPDATE used SET used_state=?,status_id=?,price=?,book_note=?,return_book=?,updated=? WHERE used_id=?`;
+  const [result] = await db.query(sql, [
+    data.used_state,
+    data.status_id,
+    data.price,
+    data.book_note,
+    return_book,
+    currentDateTime,
+    data.used_id,
+  ]);
+  return res.json(result);
+});
 
 module.exports = router;
