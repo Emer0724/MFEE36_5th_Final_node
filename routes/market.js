@@ -180,6 +180,27 @@ router.post('/addToCart', async (req, res) => {
    }
 });
 
+//加入購物車 (二手)
+router.post('/addToCartUsed', async (req, res) => {
+   const { member_id, ISBN, used_id } = req.body; // 從請求中取得 member_id 和 ISBN
+   console.log(member_id)
+   console.log(ISBN)
+   console.log(used_id)
+   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
+   const [checkresult] = await db.query(checksql, [ISBN, member_id, used_id]);
+   if (checkresult.length === 0) {
+      const createsql = `INSERT INTO cart (member_id, ISBN, used_id, count, createAt, updateAt) VALUES (?, ?, 1, ?, ?)`;
+      const [result] = await db.query(createsql, [member_id, ISBN, used_id, currentDateTime, currentDateTime]);
+      res.json(result);
+   } else {
+      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
+      const currentCount = checkresult[0].count;
+      const newCount = currentCount + 1;
+      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id, used_id]);
+      res.json(updateResult);
+   }
+});
+
 //usedList
 router.get("/usedList", async (req, res) => {
    const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
@@ -193,9 +214,34 @@ router.get("/usedList", async (req, res) => {
    }
 });
 
+//wishList
 
-
-
+router.get("/wishlist", async (req, res) => {
+   const member_id = req.query.member_id;
+   console.log(member_id)
+   try {
+      const sql = `select * from recommand where member_id=? `
+      const [rows] = await db.query(sql, [member_id])
+      return res.json([rows])
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
+//wishList-刪除
+router.delete("/removewish", async (req, res) => {
+   const { ISBN, member_id } = req.body
+   console.log(123)
+   console.log(ISBN)
+   console.log(member_id)
+   try {
+      await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
+      return res.json({ message: "刪除成功" });
+   } catch (error) {
+      console.error('刪除資料庫發生錯誤', error);
+      res.status(500).json({ error: '刪除資料庫發生錯誤' });
+   }
+})
 
 
 
