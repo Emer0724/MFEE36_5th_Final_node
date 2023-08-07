@@ -88,20 +88,27 @@ router.get('/test1',async (req, res)=>{
     res.json(updateResult)
   }
 })
+router.get('/count',async(req,res)=>{
+  const member = req.query.member
+  const countsql = `SELECT count FROM cart WHERE member_id=?`
+  const [result] = await db.query(countsql,[member])
+  console.log(result);
+  res.json(result);
+})
 
 router.get('/cart',async(req,res)=>{
   const member = req.query.member;
-  console.log(member);
   const cartsql = `SELECT 
   cart.member_id,
   book_info.pic,
   book_info.book_name,
   book_info.ISBN,
   book_info.price,
-  cart.count 
+  cart.count,
+  cart.used_id
   FROM cart 
   JOIN book_info 
-  ON cart.ISBN = book_info.ISBN 
+  ON cart.ISBN = book_info.ISBN
   WHERE cart.member_id = ?`;
   const [result] = await db.query(cartsql, [member]);
   res.send(result);
@@ -185,6 +192,7 @@ router.get('/cart/usetoken', async (req, res) => {
 
 router.get("/cart/recommand",async(req,res)=>{
   const member = req.query.member;
+  console.log(member);
   const checksql = `SELECT book_info.ISBN,book_info.pic,book_info.book_name FROM recommand JOIN book_info ON recommand.ISBN=book_info.ISBN WHERE recommand.member_id=?`;
   const [result] = await db.query(checksql,[member])
   res.json(result)
@@ -199,12 +207,11 @@ router.get('/cartmember', async (req, res) => {
 
 
 router.post('/cart/complete',async(req,res)=>{
-  const member =req.body.member;
-  console.log(member);
   const data = req.body;
   const countdata = data.countData;
   const pricefinal = data.pricefinal;//already price
   const formdata = data.formData;
+  const member =data.member1;
 
   let ship, shipcost;
   if (formdata.shippingMethod === "宅配到家+100") {
@@ -279,6 +286,9 @@ router.post('/cart/complete',async(req,res)=>{
   JOIN order_1 ON cart.member_id = order_1.member_id
   JOIN book_info ON cart.ISBN = book_info.ISBN;`
   await db.query(createordersql,[currentDateTime,currentDateTime])
+  //處理二手書 進入訂單資料表後 要將賣出狀況改成y
+  const updateused = `UPDATE used SET sale =? WHERE used_id IN (SELECT used_id FROM order_detail);`
+  await db.query(updateused,['y'])
   //完成後清空
   const clearCartSQL = `DELETE FROM cart WHERE member_id = ?;`;
   await db.query(clearCartSQL,[member]);
@@ -287,10 +297,12 @@ router.post('/cart/complete',async(req,res)=>{
 })
 // member_id,customer_name,customer_phone,customer_address,shipping,shipping_cost,choosestore,total_price,payment,status,createAt,updateAt,use_token,use_coupon
 router.get('/order',async(req,res)=>{
-  const member =1;
+  const member =req.query.member;
   const showitemsql = `
   SELECT 
   order_id,
+  customer_name,
+  customer_phone,
   shipping_cost,
   total_price,
   status,
@@ -309,7 +321,6 @@ router.get('/order',async(req,res)=>{
 })
 
 router.post('/orderdetail',async(req,res)=>{
-  const member =1;
   const data = req.body;
   const showitemsql = `
   SELECT 
@@ -338,12 +349,11 @@ router.post('/orderdetail',async(req,res)=>{
   ON
   order_detail.ISBN = book_info.ISBN
   WHERE
-  order_1.member_id =?
-  AND
   order_detail.order_id = ?;
  `
- const [result] = await db.query(showitemsql,[member,data.orderid])
+ const [result] = await db.query(showitemsql,[data.orderid])
  res.send(result)
 })
+
 
 module.exports = router;
