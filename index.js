@@ -79,6 +79,8 @@ app.use((req, res, next) => {
         return djs.format(fm);
     };
 
+   
+
     const auth = req.get('Authorization');
     if (auth && auth.indexOf('Bearer ') === 0) {
         const token = auth.slice(7);
