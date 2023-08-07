@@ -171,9 +171,8 @@ router.get("/change/item/", async (req, res) => {
       return res.json(output);
     } else {
       const totalPages = Math.ceil(totalRows[0].total / perPage);
-      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${
-        perPage * (page - 1)
-      }, ${perPage} `;
+      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${perPage * (page - 1)
+        }, ${perPage} `;
       const [rows] = await db.query(sql);
 
       if (page > totalPages) {
@@ -350,11 +349,12 @@ router.get("/getUsedinfo", async (req, res) => {
   }
 });
 
-router.get('/usedlist/:ISBN',async(req,res)=>{
-const ISBN=req.params.ISBN
-const sql=`SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`
-const [result]=await db.query(sql,ISBN)
-return res.json(result)
+router.get('/usedlist/:ISBN', async (req, res) => {
+  const ISBN = req.params.ISBN
+  const sql = `SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`
+  const [result] = await db.query(sql, ISBN)
+  console.log(result)
+  return res.json(result)
 })
 
 module.exports = router;
