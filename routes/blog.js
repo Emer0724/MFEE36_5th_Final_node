@@ -1,6 +1,7 @@
 const dayjs = require("dayjs"); //時間格式
 const express = require("express");
 const { now } = require("moment"); //時間格式-有時區
+const path = require("path");
 const db = require(__dirname + "/../modules/mysql2");
 const router = express.Router();
 const upload = require(__dirname + "/../modules/img-upload");
@@ -10,6 +11,7 @@ const moment = require("moment-timezone");
 const date = new Date();
 const currentDateTime = moment().format("YYYY-MM-DD HH:mm:ss");
 const upload_avatar = require(__dirname + "/../modules/img-upload_blogimg");
+const fs = require("fs");
 //token驗證
 // if(! res.locals.jwtData){
 //    output.error = '沒有 token 驗證'
@@ -190,7 +192,6 @@ router.get("/tagbook/asc", async (req, res) => {
   } //tag書
 });
 
-
 router.get("/book/asc", async (req, res) => {
   try {
     const query =
@@ -221,16 +222,13 @@ router.get("/:blogsid", async (req, res) => {
     const query =
       "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, member.nickname, member.member_id, member.mem_avatar, tag.tag_classification FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.blog_sid = ?";
     const [result] = await db.query(query, [blogId]);
-
     // 檢查文章是否存在，如果不存在返回 404 狀態碼
     if (result.length === 0) {
       return res.status(404).json({ error: "文章不存在" });
     }
-
     const query1 =
       "SELECT blog.blog_sid, member.nickname, member.mem_avatar, reply.reply_content, reply.add_date FROM blog LEFT JOIN reply ON blog.blog_sid = reply.blog_sid INNER JOIN member ON member.member_id = reply.member_id WHERE blog.blog_sid = ?";
     const [result1] = await db.query(query1, [blogId]);
-
     // 返回文章內容和留言數據
     return res.json([result, result1]);
   } catch (err) {
@@ -321,19 +319,6 @@ router.get("/lookblog/:user", async (req, res) => {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
   } //查詢個人頁作品
-});
-
-router.get("/edit/lookbook/:user", async (req, res) => {
-  try {
-    const userId = req.params.user;
-    const query =
-      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.book_review_sid, book_review.ISBN, book_review.score, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.book_review_sid = ?";
-    const [result] = await db.query(query, [userId]);
-    return res.json(result);
-  } catch (err) {
-    console.error("查詢失敗：", err);
-    res.status(500).json({ error: "錯誤" });
-  } //編輯書評 測試
 });
 
 router.get("/lookbook/:user", async (req, res) => {
@@ -440,23 +425,100 @@ router.post("/reply/upload", multipartParser, async (req, res) => {
   }); //上傳留言
 });
 
-router.post("/blog/upload", multipartParser, async (req, res) => {
+router.post("/bookreview/edit/:id", multipartParser, async (req, res) => {
   const data = req.body;
+  const reviewId = req.params.id;
   const sql =
-    "INSERT INTO `blog`" +
-    "(`member_id`, `blog_title`, `blog_img`, `tag_id`, `blog_post`,`add_date`)" +
-    "VALUES ( ?, ?, ?, ?, ?, NOW())";
-  const [result] = await db.query(sql, [
-    data.member_id,
-    data.title,
-    data.image,
-    data.tag,
-    data.content,
-  ]);
-  res.json({
-    result,
-    postData: req.body,
-  }); //上傳部落格
+    "UPDATE `book_review` SET " +
+    "`member_id` = ?, " +
+    "`ISBN` = ?, " +
+    "`score` = ?, " +
+    "`book_review` = ?, " +
+    "`add_date` = NOW() " +
+    "WHERE `book_review_sid` = ?";
+
+  try {
+    const [result] = await db.query(sql, [
+      data.memberData,
+      data.ISBN,
+      data.score,
+      data.content,
+      reviewId, // 將URL中的書評ID傳遞到SQL查詢中
+    ]);
+    res.json({
+      result,
+      postData: req.body,
+    });
+  } catch (error) {
+    console.error("更新書評時出錯：", error);
+    res.status(500).json({ error: "更新書評時出錯" });
+  }
+});
+
+router.post("/blog/upload", multipartParser, async (req, res) => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const data = req.body;
+  const base64Image = data.image;
+  let imageName = null;
+
+  if (base64Image) {
+    const imageName = `${year}${month}${day}_${hours}${minutes}${seconds}.jpg`;
+    const imagePath = path.join(__dirname, "../public/blogimg", imageName);
+
+    const imageData = Buffer.from(
+      base64Image.replace(/^data:image\/\w+;base64,/, ""),
+      "base64"
+    );
+
+    fs.writeFile(imagePath, imageData, async (err) => {
+      if (err) {
+        console.error("Error saving image:", err);
+        return res.status(500).json({ error: "Failed to save image." });
+      }
+
+      const sql =
+        "INSERT INTO `blog`" +
+        "(`member_id`, `blog_title`, `blog_img`, `tag_id`, `blog_post`,`add_date`)" +
+        "VALUES (?, ?, ?, ?, ?, NOW())";
+
+      const [result] = await db.query(sql, [
+        data.member_id,
+        data.title,
+        imageName,
+        data.tag,
+        data.content,
+      ]);
+
+      res.json({
+        result,
+        postData: req.body,
+      });
+    });
+  } else {
+    const sql =
+      "INSERT INTO `blog`" +
+      "(`member_id`, `blog_title`, `blog_img`, `tag_id`, `blog_post`,`add_date`)" +
+      "VALUES (?, ?, ?, ?, ?, NOW())";
+
+    const [result] = await db.query(sql, [
+      data.member_id,
+      data.title,
+      imageName,
+      data.tag,
+      data.content,
+    ]);
+
+    res.json({
+      result,
+      postData: req.body,
+    });
+  } //上傳作品
 });
 
 router.post("/bookreview/upload", multipartParser, async (req, res) => {
@@ -478,34 +540,109 @@ router.post("/bookreview/upload", multipartParser, async (req, res) => {
   }); //上傳書評
 });
 
-router.post("/bookreview/edit/:id", multipartParser, async (req, res) => {
-  const data = req.body;
-  const reviewId = req.params.id
-  const sql =
-    "UPDATE `book_review` SET " +
-    "`member_id` = ?, " +
-    "`ISBN` = ?, " +
-    "`score` = ?, " +
-    "`book_review` = ?, " +
-    "`add_date` = NOW() " +
-    "WHERE `book_review_sid` = ?";
-
+router.get("/edit/lookbook/:user", async (req, res) => {
   try {
+    const userId = req.params.user;
+    const query =
+      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.book_review_sid, book_review.ISBN, book_review.score, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.book_review_sid = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //編輯的書評資料
+});
+
+router.put(
+  "/bookreview/edit/:book_review_sid",
+  multipartParser,
+  async (req, res) => {
+    const data = req.body;
+    const bookReviewSid = req.params.book_review_sid;
+    const currentTime = new Date();
+
+    const sql =
+      "UPDATE `book_review` SET " +
+      "`member_id` = ?, `ISBN` = ?, `score` = ?, `book_review` = ?, `add_date` = ?" +
+      "WHERE `book_review_sid` = ?";
     const [result] = await db.query(sql, [
-      data.memberData,
+      data.member_id,
       data.ISBN,
       data.score,
       data.content,
-      reviewId, // 將URL中的書評ID傳遞到SQL查詢中
+      currentTime,
+      bookReviewSid,
     ]);
     res.json({
       result,
-      postData: req.body,
-    })
-  } catch (error) {
-    console.error("更新書評時出錯：", error);
-    res.status(500).json({ error: "更新書評時出錯" });
+      updatedData: req.body,
+    }); //编辑書評
   }
+);
+
+router.get("/edit/lookblog/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title,blog.tag_id, blog.blog_img, blog.blog_post, blog.add_date, member.member_id, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.blog_sid = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //查詢個人頁作品
+});
+
+router.put("/blog/edit/:blog_sid", multipartParser, async (req, res) => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const data = req.body;
+  const base64Image = data.image;
+  const blogSid = req.params.blog_sid;
+  const currentTime = new Date();
+  let imageName = null;
+
+  if (base64Image) {
+    const imageName = `${year}${month}${day}_${hours}${minutes}${seconds}.jpg`;
+    const imagePath = path.join(__dirname, "../public/blogimg", imageName);
+
+    const imageData = Buffer.from(
+      base64Image.replace(/^data:image\/\w+;base64,/, ""),
+      "base64"
+    );
+
+    fs.writeFile(imagePath, imageData, async (err) => {
+      if (err) {
+        console.error("Error saving image:", err);
+        return res.status(500).json({ error: "Failed to save image." });
+      }
+
+      const sql =
+        "UPDATE `blog` SET " +
+        "`member_id` = ?, `blog_title` = ?, `blog_img` = ?, `tag_id` = ?, `blog_post` = ?, `add_date` = ?" +
+        "WHERE `blog_sid` = ?";
+
+      const [result] = await db.query(sql, [  
+        data.member_id,
+        data.title,
+        imageName,
+        data.tag,
+        data.content,
+        currentTime,  
+        blogSid,
+      ]);
+
+      res.json({
+        result,
+        postData: req.body,
+      });
+    });
+  }//編輯作品
 });
 
 module.exports = router;
