@@ -9,6 +9,7 @@ const moment = require("moment-timezone");
 //寫入 時間用 currentDateTime
 const date = new Date();
 const currentDateTime = moment().format("YYYY-MM-DD HH:mm:ss");
+const upload_avatar = require(__dirname + "/../modules/img-upload_blogimg");
 //token驗證
 // if(! res.locals.jwtData){
 //    output.error = '沒有 token 驗證'
@@ -45,6 +46,151 @@ router.get("/desc", async (req, res) => {
   } //部落格最新
 });
 
+router.get("/taglove/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag愛情
+});
+
+router.get("/taglove/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag愛情
+});
+
+router.get("/tagtravel/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag旅遊
+});
+
+router.get("/tagtravel/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag旅遊
+});
+
+router.get("/taglife/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag生活
+});
+
+router.get("/taglife/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag生活
+});
+
+router.get("/tagwork/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag工作
+});
+
+router.get("/tagwork/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag工作
+});
+
+router.get("/tageducate/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag教育
+});
+
+router.get("/tageducate/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag教育
+});
+
+router.get("/tagbook/desc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` DESC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag書
+});
+
+router.get("/tagbook/asc", async (req, res) => {
+  try {
+    const query =
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` ASC LIMIT 10";
+    const [result] = await db.query(query);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //tag書
+});
+
+
 router.get("/book/asc", async (req, res) => {
   try {
     const query =
@@ -75,7 +221,7 @@ router.get("/:blogsid", async (req, res) => {
     const query =
       "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, member.nickname, member.member_id, member.mem_avatar, tag.tag_classification FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.blog_sid = ?";
     const [result] = await db.query(query, [blogId]);
-    
+
     // 檢查文章是否存在，如果不存在返回 404 狀態碼
     if (result.length === 0) {
       return res.status(404).json({ error: "文章不存在" });
@@ -103,45 +249,40 @@ router.get("/checklike/:blog_sid", async (req, res) => {
   } catch (err) {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
-  }//檢查有沒有最愛這筆資料
+  } //檢查有沒有最愛這筆資料
 });
 
 router.post("/like/:userId", multipartParser, async (req, res) => {
   const data = req.body;
   console.log(req.body);
   const sql =
-    "INSERT INTO `like1`" +
-    "(`blog_id`, `member_id`)" +
-    "VALUES ( ?, ?)";
-  const [result] = await db.query(sql, [
-    data.blog_sid,
-    data.user
-  ]);
+    "INSERT INTO `like1`" + "(`blog_id`, `member_id`)" + "VALUES ( ?, ?)";
+  const [result] = await db.query(sql, [data.blog_sid, data.user]);
   res.json({
     result,
     postData: req.body,
-  })//最愛
+  }); //最愛
 });
 
-router.delete('/deletelike/:userId', async (req, res) => {
+router.delete("/deletelike/:userId", async (req, res) => {
   const blog_id = req.params.userId;
   try {
     const sql = "DELETE FROM `like1` WHERE `blog_id` = ?";
     const [result] = await db.query(sql, [blog_id]);
     if (result.affectedRows === 1) {
       res.json({
-        message: '成功',
+        message: "成功",
       });
     } else {
       res.status(404).json({
-        error: '沒有文章',
+        error: "沒有文章",
       });
     }
   } catch (error) {
-    console.error('錯誤:', error);
-    res.status(500).json({ error: '錯誤' });
-  }//取消最愛
-})
+    console.error("錯誤:", error);
+    res.status(500).json({ error: "錯誤" });
+  } //取消最愛
+});
 
 router.get("/looklike/:user", async (req, res) => {
   try {
@@ -182,11 +323,24 @@ router.get("/lookblog/:user", async (req, res) => {
   } //查詢個人頁作品
 });
 
+router.get("/edit/lookbook/:user", async (req, res) => {
+  try {
+    const userId = req.params.user;
+    const query =
+      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.book_review_sid, book_review.ISBN, book_review.score, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.book_review_sid = ?";
+    const [result] = await db.query(query, [userId]);
+    return res.json(result);
+  } catch (err) {
+    console.error("查詢失敗：", err);
+    res.status(500).json({ error: "錯誤" });
+  } //編輯書評 測試
+});
+
 router.get("/lookbook/:user", async (req, res) => {
   try {
     const userId = req.params.user;
     const query =
-      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.ISBN, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.member_id = ?";
+      "SELECT member.member_id, member.nickname, member.mem_avatar, book_review.book_review, book_review.book_review_sid, book_review.ISBN, book_review.score, book_review.add_date, book_info.pic, book_info.book_name FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_review.ISBN = book_info.ISBN WHERE book_review.member_id = ?";
     const [result] = await db.query(query, [userId]);
     return res.json(result);
   } catch (err) {
@@ -199,38 +353,33 @@ router.post("/track/:userId", multipartParser, async (req, res) => {
   const data = req.body;
   console.log(req.body);
   const sql =
-    "INSERT INTO `track`" +
-    "(`member1_id`, `member2_id`)" +
-    "VALUES ( ?, ?)";
-  const [result] = await db.query(sql, [
-    data.user,
-    data.member_id
-  ]);
+    "INSERT INTO `track`" + "(`member1_id`, `member2_id`)" + "VALUES ( ?, ?)";
+  const [result] = await db.query(sql, [data.user, data.member_id]);
   res.json({
     result,
     postData: req.body,
-  })//追蹤
-})
+  }); //追蹤
+});
 
-router.delete('/deletetrack/:userId', async (req, res) => {
+router.delete("/deletetrack/:userId", async (req, res) => {
   const member2_id = req.params.userId;
   try {
     const sql = "DELETE FROM `track` WHERE `member2_id` = ?";
     const [result] = await db.query(sql, [member2_id]);
     if (result.affectedRows === 1) {
       res.json({
-        message: '成功',
+        message: "成功",
       });
     } else {
       res.status(404).json({
-        error: '沒有用戶',
+        error: "沒有用戶",
       });
     }
   } catch (error) {
-    console.error('錯誤:', error);
-    res.status(500).json({ error: '錯誤' });
-  }//取消追蹤
-})
+    console.error("錯誤:", error);
+    res.status(500).json({ error: "錯誤" });
+  } //取消追蹤
+});
 
 router.get("/nav/follow", async (req, res) => {
   try {
@@ -256,8 +405,8 @@ router.get("/nav/like/:userId", async (req, res) => {
   } catch (err) {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
-  }//抓最愛總數
-})
+  } //抓最愛總數
+});
 
 router.get("/nav/track/:userId", async (req, res) => {
   try {
@@ -271,8 +420,8 @@ router.get("/nav/track/:userId", async (req, res) => {
   } catch (err) {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
-  }//抓追蹤總數
-})
+  } //抓追蹤總數
+});
 
 router.post("/reply/upload", multipartParser, async (req, res) => {
   const data = req.body;
@@ -329,16 +478,34 @@ router.post("/bookreview/upload", multipartParser, async (req, res) => {
   }); //上傳書評
 });
 
-// const [memberData, setMemberData] = useState([])
+router.post("/bookreview/edit/:id", multipartParser, async (req, res) => {
+  const data = req.body;
+  const reviewId = req.params.id
+  const sql =
+    "UPDATE `book_review` SET " +
+    "`member_id` = ?, " +
+    "`ISBN` = ?, " +
+    "`score` = ?, " +
+    "`book_review` = ?, " +
+    "`add_date` = NOW() " +
+    "WHERE `book_review_sid` = ?";
 
-// useEffect(() => {
-//   // 從本地儲存空間獲取會員資料
-//   const storedMemberData = localStorage.getItem('auth')
-
-//   if (storedMemberData) {
-//     const parsedMemberData = JSON.parse(storedMemberData)
-//     setMemberData(parsedMemberData)
-//   }
-// }, [])
+  try {
+    const [result] = await db.query(sql, [
+      data.memberData,
+      data.ISBN,
+      data.score,
+      data.content,
+      reviewId, // 將URL中的書評ID傳遞到SQL查詢中
+    ]);
+    res.json({
+      result,
+      postData: req.body,
+    })
+  } catch (error) {
+    console.error("更新書評時出錯：", error);
+    res.status(500).json({ error: "更新書評時出錯" });
+  }
+});
 
 module.exports = router;
