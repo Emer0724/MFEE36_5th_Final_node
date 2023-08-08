@@ -194,26 +194,36 @@ router.get("/tagbook/asc", async (req, res) => {
 
 router.get("/book/asc", async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = 10; // 每頁顯示的書評數量
+    const offset = (page - 1) * limit;
+
     const query =
-      "SELECT book_info.book_name, book_info.pic, book_review.score, book_review.add_date, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN ORDER BY `score` ASC LIMIT 10";
-    const [result] = await db.query(query);
+      'SELECT book_info.book_name, book_info.pic, book_review.score, book_review.add_date, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN ORDER BY `score` ASC LIMIT ? OFFSET ?';
+    const [result] = await db.query(query, [limit, offset]);
+
     return res.json(result);
   } catch (err) {
-    console.error("查詢失敗：", err);
-    res.status(500).json({ error: "錯誤" });
-  } //書評最舊
+    console.error('查詢失敗：', err);
+    res.status(500).json({ error: '錯誤' });
+  }//無限滾動的書評評分最低
 });
 
-router.get("/book/desc", async (req, res) => {
+router.get('/book/desc', async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = 10; // 每頁顯示的書評數量
+    const offset = (page - 1) * limit;
+
     const query =
-      "SELECT book_info.book_name, book_info.pic, book_review.score, book_review.add_date, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN ORDER BY `score` DESC LIMIT 10";
-    const [result] = await db.query(query);
+      'SELECT book_info.book_name, book_info.pic, book_review.score, book_review.add_date, book_review.book_review, member.nickname, member.mem_avatar FROM book_review INNER JOIN member ON book_review.member_id = member.member_id INNER JOIN book_info ON book_info.ISBN = book_review.ISBN ORDER BY `score` DESC LIMIT ? OFFSET ?';
+    const [result] = await db.query(query, [limit, offset]);
+
     return res.json(result);
   } catch (err) {
-    console.error("查詢失敗：", err);
-    res.status(500).json({ error: "錯誤" });
-  } //書評最新
+    console.error('查詢失敗：', err);
+    res.status(500).json({ error: '錯誤' });
+  }//無限滾動的書評評分最高
 });
 
 router.get("/:blogsid", async (req, res) => {
