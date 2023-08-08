@@ -32,7 +32,6 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
    };
    const perPage = 16;   //處理分頁與關鍵字搜尋
    let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
-   let page = req.query.page ? parseInt(req.query.page) : 1; //儲存目前所在的頁數 若有page參數則轉為整數,若無則回傳一
    if (!page || page < 1) { //若'page'為undifined 或小於一
       output.redirect = req.baseUrl;
       return res.json(output); //則回第一頁
@@ -75,24 +74,25 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
 
 //主頁展示
 router.get("/display", async (req, res) => {
-   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
+   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
    const label = req.query.label;
    try {
       const sql = `select * from book_info where category_id=? `
-      const [rows] = await db.query(sql, category_id)
+      const [rows] = await db.query(sql, category_id) //將要求送往資料庫
       const totalRows = rows.length; // 取得資料總數
       //TO DO 有空可做category_id=1 設為亂數呈現
-      if (!rows[0]) {
+      if (!rows[0]) { //檢查rows[]陣列第一項是否為空 若為null / undefined 經 "!"後會為ture
          return res.status(404).json({ error: '無該分類資料' });
       } else {
-         const totalPages = Math.ceil(totalRows / 16);
+         const totalPages = Math.ceil(totalRows / 16); //.ceil 無條件進位
          let page = req.query.page ? parseInt(req.query.page) : 1;
          if (page > totalPages) {
             const lastPage = totalPages;
             return res.redirect(`${req.baseUrl}?page=${lastPage}`);
          }
-         return res.json({ rows, totalRows, category_id, label })
-         // res.json({ rows, totalRows })
+         console.log(totalPages)
+         return res.json({ rows, totalRows, category_id, label, totalPages })
+
 
       }
    } catch (error) {
@@ -163,6 +163,8 @@ router.delete("/recommand", async (req, res) => {
 //加入購物車
 router.post('/addToCart', async (req, res) => {
    const { member_id, ISBN } = req.body; // 從請求中取得 member_id 和 ISBN
+   console.log(member_id)
+   console.log(ISBN)
    const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
    const [checkresult] = await db.query(checksql, [ISBN, member_id]);
    if (checkresult.length === 0) {
@@ -177,6 +179,28 @@ router.post('/addToCart', async (req, res) => {
       res.json(updateResult);
    }
 });
+
+//加入購物車 (二手)
+router.post('/addToCartUsed', async (req, res) => {
+   const { member_id, ISBN, used_id } = req.body; // 從請求中取得 member_id 和 ISBN
+   console.log(member_id)
+   console.log(ISBN)
+   console.log(used_id)
+   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
+   const [checkresult] = await db.query(checksql, [ISBN, member_id, used_id]);
+   if (checkresult.length === 0) {
+      const createsql = `INSERT INTO cart (member_id, ISBN, used_id, count, createAt, updateAt) VALUES (?, ?, 1, ?, ?)`;
+      const [result] = await db.query(createsql, [member_id, ISBN, used_id, currentDateTime, currentDateTime]);
+      res.json(result);
+   } else {
+      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
+      const currentCount = checkresult[0].count;
+      const newCount = currentCount + 1;
+      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id, used_id]);
+      res.json(updateResult);
+   }
+});
+
 //usedList
 router.get("/usedList", async (req, res) => {
    const ISBN = req.query.ISBN; // 從 URL 取得前端送過來的 category ID
@@ -190,9 +214,34 @@ router.get("/usedList", async (req, res) => {
    }
 });
 
+//wishList
 
-
-
+router.get("/wishlist", async (req, res) => {
+   const member_id = req.query.member_id;
+   console.log(member_id)
+   try {
+      const sql = `select * from recommand where member_id=? `
+      const [rows] = await db.query(sql, [member_id])
+      return res.json([rows])
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
+//wishList-刪除
+router.delete("/removewish", async (req, res) => {
+   const { ISBN, member_id } = req.body
+   console.log(123)
+   console.log(ISBN)
+   console.log(member_id)
+   try {
+      await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
+      return res.json({ message: "刪除成功" });
+   } catch (error) {
+      console.error('刪除資料庫發生錯誤', error);
+      res.status(500).json({ error: '刪除資料庫發生錯誤' });
+   }
+})
 
 
 
