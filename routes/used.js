@@ -380,8 +380,16 @@ router.post("/upload", upload_avatar.single("avatar"), async (req, res) => {
 
 router.post("/backstage_info", async (req, res) => {
   const data = { ...req.body };
+  console.log(data)
   const ISBN = JSON.parse(data.ISBN);
-  const ISBN_1 = ISBN.join(",");
+  console.log(ISBN)
+  let ISBN_1
+  if(Array.isArray(ISBN)){
+     ISBN_1 = ISBN.join(",");
+  }else{
+     ISBN_1=ISBN
+  }
+ 
   console.log(ISBN_1);
   const sql = `select a.*,b.book_name,b.price as original_price ,b.pic  from used as a join book_info as b using(ISBN) where used_id in(${ISBN_1})`;
   const [result] = await db.query(sql);
@@ -409,6 +417,21 @@ router.post("/updisplay", async (req, res) => {
     data.used_id,
   ]);
   return res.json(result);
+});
+
+router.get("/profile", async (req, res) => {
+  output = { error: "" };
+  console.log(res.locals.jwtData);
+  if (!res.locals.jwtData) {
+    output.error = "沒有 token 驗證";
+    return res.json(output);
+  } else {
+    member_id = res.locals.jwtData.member_id;
+    const sql = `select * from member where member_id=?`;
+    const [result] = await db.query(sql, member_id);
+    console.log(result)
+    return res.json(result)
+  }
 });
 
 module.exports = router;
