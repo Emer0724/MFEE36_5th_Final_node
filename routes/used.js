@@ -299,7 +299,7 @@ router.get("/index/book_info/", async (req, res) => {
   });
 
   //取書評
-  const sql_bookreview = `SELECT book_review_sid,nickname,CONVERT(a.add_date, DATE) as add_date,score,pic,mem_avatar,book_review FROM book_review as a LEFT join member as b using(member_id) LEFT join book_info as c using(ISBN) ORDER BY Rand() LIMIT 9`;
+  const sql_bookreview = `SELECT book_review_sid,nickname,CONVERT(a.add_date, DATE) as add_date,score,pic,mem_avatar,book_review,ISBN FROM book_review as a LEFT join member as b using(member_id) LEFT join book_info as c using(ISBN) ORDER BY Rand() LIMIT 9`;
   const [result_bookreview] = await db.query(sql_bookreview);
   const result_bookreview_final = result_bookreview.map((v, i) => {
     let add_date_st = moment(v.add_date).format("YYYY.MM.DD");
