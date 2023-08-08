@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 //寫入 時間用 currentDateTime
 const date= new Date
 const currentDateTime =moment().format('YYYY-MM-DD HH:mm:ss');
+const { v4:uuidv4} = require('uuid')
 //token驗證
 // if(! res.locals.jwtData){
 //    output.error = '沒有 token 驗證'
@@ -98,7 +99,7 @@ router.get('/count',async(req,res)=>{
 
 router.get('/cart',async(req,res)=>{
   const member = req.query.member;
-  const cartsql = `SELECT 
+  const cartsql = `SELECT
   cart.member_id,
   book_info.pic,
   book_info.book_name,
@@ -354,6 +355,19 @@ router.post('/orderdetail',async(req,res)=>{
  const [result] = await db.query(showitemsql,[data.orderid])
  res.send(result)
 })
+
+// router.post('/createorder',async(req,res)=>{
+//   const orderId = uuidv4();
+//   const pid = uuidv4()
+//   const order = {
+//     orderId: orderId,
+//     currency:'TWD',
+//     amount:req.body.amount,
+//     package:req.body.data,
+//     option
+//   }
+
+// })
 
 
 module.exports = router;
