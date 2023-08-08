@@ -32,7 +32,6 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
    };
    const perPage = 16;   //處理分頁與關鍵字搜尋
    let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
-   let page = req.query.page ? parseInt(req.query.page) : 1; //儲存目前所在的頁數 若有page參數則轉為整數,若無則回傳一
    if (!page || page < 1) { //若'page'為undifined 或小於一
       output.redirect = req.baseUrl;
       return res.json(output); //則回第一頁
@@ -75,24 +74,25 @@ router.get("/", async (req, res) => {  //處理GET請求時執行async
 
 //主頁展示
 router.get("/display", async (req, res) => {
-   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
+   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
    const label = req.query.label;
    try {
       const sql = `select * from book_info where category_id=? `
-      const [rows] = await db.query(sql, category_id)
+      const [rows] = await db.query(sql, category_id) //將要求送往資料庫
       const totalRows = rows.length; // 取得資料總數
       //TO DO 有空可做category_id=1 設為亂數呈現
-      if (!rows[0]) {
+      if (!rows[0]) { //檢查rows[]陣列第一項是否為空 若為null / undefined 經 "!"後會為ture
          return res.status(404).json({ error: '無該分類資料' });
       } else {
-         const totalPages = Math.ceil(totalRows / 16);
+         const totalPages = Math.ceil(totalRows / 16); //.ceil 無條件進位
          let page = req.query.page ? parseInt(req.query.page) : 1;
          if (page > totalPages) {
             const lastPage = totalPages;
             return res.redirect(`${req.baseUrl}?page=${lastPage}`);
          }
-         return res.json({ rows, totalRows, category_id, label })
-         // res.json({ rows, totalRows })
+         console.log(totalPages)
+         return res.json({ rows, totalRows, category_id, label, totalPages })
+
 
       }
    } catch (error) {
