@@ -20,6 +20,7 @@
     "express": "^4.18.2",
     "express-mysql-session": "^3.0.0",
     "express-session": "^1.17.3",
+    "fs": "^0.0.1-security",
     "jquery": "^3.7.0",
     "jsonwebtoken": "^9.0.1",
     "line-pay": "^1.0.16",
