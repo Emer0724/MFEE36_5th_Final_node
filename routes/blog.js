@@ -566,7 +566,7 @@ router.put(
       "`member_id` = ?, `ISBN` = ?, `score` = ?, `book_review` = ?, `add_date` = ?" +
       "WHERE `book_review_sid` = ?";
     const [result] = await db.query(sql, [
-      data.member_id,
+      data.memberData,
       data.ISBN,
       data.score,
       data.content,
