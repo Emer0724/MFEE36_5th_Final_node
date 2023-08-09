@@ -182,21 +182,21 @@ router.post('/addToCart', async (req, res) => {
 
 //加入購物車 (二手)
 router.post('/addToCartUsed', async (req, res) => {
-   const { member_id, ISBN, used_id } = req.body; // 從請求中取得 member_id 和 ISBN
+   const { member_id, ISBN, status_id } = req.body; // 從請求中取得 member_id 和 ISBN
    console.log(member_id)
    console.log(ISBN)
-   console.log(used_id)
-   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
-   const [checkresult] = await db.query(checksql, [ISBN, member_id, used_id]);
+   console.log(status_id)
+   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND status_id = ?`;
+   const [checkresult] = await db.query(checksql, [ISBN, member_id, status_id]);
    if (checkresult.length === 0) {
-      const createsql = `INSERT INTO cart (member_id, ISBN, used_id, count, createAt, updateAt) VALUES (?, ?, 1, ?, ?)`;
-      const [result] = await db.query(createsql, [member_id, ISBN, used_id, currentDateTime, currentDateTime]);
+      const createsql = `INSERT INTO cart (member_id, ISBN, status_id, count, createAt, updateAt) VALUES (?, ?, ?,1, ?, ?)`;
+      const [result] = await db.query(createsql, [member_id, ISBN, status_id, currentDateTime, currentDateTime]);
       res.json(result);
    } else {
-      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ? AND used_id = ?`;
+      const updatesql = `UPDATE cart SET count = ?, updateAt = ? WHERE ISBN = ? AND member_id = ? AND status_id = ?`;
       const currentCount = checkresult[0].count;
       const newCount = currentCount + 1;
-      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id, used_id]);
+      const [updateResult] = await db.query(updatesql, [newCount, currentDateTime, ISBN, member_id,status_id]);
       res.json(updateResult);
    }
 });
