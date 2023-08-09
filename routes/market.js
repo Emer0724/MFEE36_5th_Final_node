@@ -242,6 +242,41 @@ router.delete("/removewish", async (req, res) => {
       res.status(500).json({ error: '刪除資料庫發生錯誤' });
    }
 })
+//coupon
+router.get("/coupon", async (req, res) => {
+   const member_id = req.query.member_id;
+   try {
+      const sql1 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS null`
+      const sql2 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS NOT null`
+      const [rows1] = await db.query(sql1, member_id)
+      const [rows2] = await db.query(sql2, member_id)
+      console.log([rows1, rows2])
+      return res.json([rows1, rows2])
+   } catch (error) {
+      console.error('查詢資料庫發生錯誤', error);
+      res.status(500).json({ error: '查詢資料庫發生錯誤' });
+   }
+});
+
+//優惠碼
+router.post('/getCoupon', async (req, res) => {
+   const { code, member_id } = req.body; // 從請求中取得 member_id 和 code
+   console.log(code)
+   console.log(member_id)
+   console.log('有連到，改寫後端')
+
+   const sql1 = `SELECT coupon_id FROM coupon WHERE code = ?`;
+   const [rows1] = await db.query(sql1, code)
+
+   if (rows1.length > 0) {
+      const couponId = rows1[0].coupon_id
+      console.log('取得 coupon_id:', couponId)
+   } else {
+      res.status(404).json({ error: '找不到符合的優惠券' })
+   }
+
+
+});
 
 
 
