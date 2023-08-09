@@ -26,9 +26,14 @@ router.get("/display", (req, res) => {
 
 router.get("/asc", async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = 10; // 每頁顯示的部落格文章數量
+    const offset = (page - 1) * limit;
+
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id ORDER BY `add_date` ASC LIMIT 10";
-    const [result] = await db.query(query);
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id ORDER BY `add_date` ASC LIMIT ? OFFSET ?";
+    const [result] = await db.query(query, [limit, offset]);
+
     return res.json(result);
   } catch (err) {
     console.error("查詢失敗：", err);
@@ -38,9 +43,14 @@ router.get("/asc", async (req, res) => {
 
 router.get("/desc", async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = 10; // 每頁顯示的部落格文章數量
+    const offset = (page - 1) * limit;
+
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id ORDER BY `add_date` DESC LIMIT 10";
-    const [result] = await db.query(query);
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id ORDER BY `add_date` DESC LIMIT ? OFFSET ?";
+    const [result] = await db.query(query, [limit, offset]);
+
     return res.json(result);
   } catch (err) {
     console.error("查詢失敗：", err);
@@ -51,7 +61,7 @@ router.get("/desc", async (req, res) => {
 router.get("/taglove/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` DESC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -63,7 +73,7 @@ router.get("/taglove/desc", async (req, res) => {
 router.get("/taglove/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 1 ORDER BY `add_date` ASC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -75,7 +85,7 @@ router.get("/taglove/asc", async (req, res) => {
 router.get("/tagtravel/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` DESC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -87,7 +97,7 @@ router.get("/tagtravel/desc", async (req, res) => {
 router.get("/tagtravel/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 2 ORDER BY `add_date` ASC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -99,7 +109,7 @@ router.get("/tagtravel/asc", async (req, res) => {
 router.get("/taglife/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` DESC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -111,7 +121,7 @@ router.get("/taglife/desc", async (req, res) => {
 router.get("/taglife/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 3 ORDER BY `add_date` ASC ";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -123,7 +133,7 @@ router.get("/taglife/asc", async (req, res) => {
 router.get("/tagwork/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` DESC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -135,7 +145,7 @@ router.get("/tagwork/desc", async (req, res) => {
 router.get("/tagwork/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 4 ORDER BY `add_date` ASC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -147,7 +157,7 @@ router.get("/tagwork/asc", async (req, res) => {
 router.get("/tageducate/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` DESC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -159,7 +169,7 @@ router.get("/tageducate/desc", async (req, res) => {
 router.get("/tageducate/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 5 ORDER BY `add_date` ASC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -171,7 +181,7 @@ router.get("/tageducate/asc", async (req, res) => {
 router.get("/tagbook/desc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` DESC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` DESC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -183,7 +193,7 @@ router.get("/tagbook/desc", async (req, res) => {
 router.get("/tagbook/asc", async (req, res) => {
   try {
     const query =
-      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` ASC LIMIT 10";
+      "SELECT blog.blog_sid, blog.blog_title, blog.blog_img, blog.blog_post, blog.add_date, blog.tag_id, tag.tag_classification, member.nickname, member.mem_avatar FROM blog INNER JOIN member ON blog.member_id = member.member_id INNER JOIN tag ON tag.tag_id = blog.tag_id WHERE blog.tag_id = 6 ORDER BY `add_date` ASC";
     const [result] = await db.query(query);
     return res.json(result);
   } catch (err) {
@@ -601,6 +611,23 @@ router.get("/edit/lookblog/:user", async (req, res) => {
     console.error("查詢失敗：", err);
     res.status(500).json({ error: "錯誤" });
   } //查詢個人頁作品
+});
+
+router.delete("/delete/blog/:blogId", async (req, res) => {
+  try {
+    const blogId = req.params.blogId;
+    const deleteQuery = "DELETE FROM blog WHERE blog_sid = ?";
+    const [result] = await db.query(deleteQuery, [blogId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "找不到要删除的blog" });
+    }
+
+    return res.json({ message: "blog已成功删除" });
+  } catch (err) {
+    console.error("删除失败：", err);
+    res.status(500).json({ error: "删除失败" });
+  }
 });
 
 router.put("/blog/edit/:blog_sid", multipartParser, async (req, res) => {
