@@ -269,13 +269,25 @@ router.post('/getCoupon', async (req, res) => {
    const [rows1] = await db.query(sql1, code)
 
    if (rows1.length > 0) {
-      const couponId = rows1[0].coupon_id
-      console.log('取得 coupon_id:', couponId)
+      const couponId = rows1[0].coupon_id;
+      console.log('取得 coupon_id:', couponId);
+
+      // 新增資料到 member_coupon
+      const sql2 = `INSERT INTO member_coupon (member_id, coupon_id) VALUES (?, ?)`;
+      const values = [member_id, couponId];
+
+      try {
+         await db.query(sql2, values);
+         console.log('成功新增資料到 member_coupon');
+         res.status(200).json({ success: true });
+      } catch (error) {
+         console.error('新增資料到 member_coupon 時發生錯誤:', error);
+         res.status(500).json({ error: '新增資料時發生錯誤' });
+      }
    } else {
-      res.status(404).json({ error: '找不到符合的優惠券' })
+      console.log('找不到符合的優惠券');
+      res.status(404).json({ error: '找不到符合的優惠券' }); // 報錯訊息
    }
-
-
 });
 
 
