@@ -613,6 +613,23 @@ router.get("/edit/lookblog/:user", async (req, res) => {
   } //查詢個人頁作品
 });
 
+router.delete("/delete/blog/:blogId", async (req, res) => {
+  try {
+    const blogId = req.params.blogId;
+    const deleteQuery = "DELETE FROM blog WHERE blog_sid = ?";
+    const [result] = await db.query(deleteQuery, [blogId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "找不到要删除的blog" });
+    }
+
+    return res.json({ message: "blog已成功删除" });
+  } catch (err) {
+    console.error("删除失败：", err);
+    res.status(500).json({ error: "删除失败" });
+  }
+});
+
 router.put("/blog/edit/:blog_sid", multipartParser, async (req, res) => {
   const now = new Date();
   const year = now.getFullYear();
