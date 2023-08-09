@@ -27,68 +27,68 @@ const { v4:uuidv4} = require('uuid')
 //7.結帳完成 產生流水號 刪除購物車 加入至order資料表
 //8.訂單記錄 join進order_detail 的 isbn 找出書的紀錄
 
-router.get('/test1',async (req, res)=>{
-   //設定輸出的預設值
-     let output = {
-         redirect: '', //導向何處
-         totalRows:0,  //總共幾筆
-         perPage: 25,  //每次顯示幾項
-         totalPages: 0, //總共幾頁
-         page: 1,  //第幾頁
-         rows: [] //資訊都在裡面
-       }
+// router.get('/test1',async (req, res)=>{
+//    //設定輸出的預設值
+//      let output = {
+//          redirect: '', //導向何處
+//          totalRows:0,  //總共幾筆
+//          perPage: 25,  //每次顯示幾項
+//          totalPages: 0, //總共幾頁
+//          page: 1,  //第幾頁
+//          rows: [] //資訊都在裡面
+//        }
  
-       const perPage = 10;//設定每次顯示幾項
-       let keyword = req.query.keyword || '';  //關鍵字由於發送方式是用get的 所以用query來抓字
-       let page = req.query.page ? parseInt(req.query.page) : 1; //輸入第幾頁時會到第幾頁 預設是第一頁
-       if(!page || page<1) {
-         output.redirect = req.baseUrl; //
-         return res.json(output);
-       };
-        let where = ' WHERE 1 ';
-        if(keyword) {
-          const kw_escaped = db.escape('%'+keyword+'%'); 
-          where += ` AND ( 
-           \`book_name\` LIKE ${kw_escaped} 
-           OR
-            \`description\` LIKE ${kw_escaped}
-            )
-          `;
-        }
-       const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`;   
-       const [[{totalRows}]] = await db.query(t_sql);
-       let totalPages = 0; //先宣告頁數 預設值 數字歸０
-       let rows = [];  //宣告內容物 預設值 空陣列
-       if(totalRows){
-         totalPages = Math.ceil(totalRows/perPage); //總頁面數量 ＝ 總筆數/一頁出現筆數
-         if(page > totalPages) {
-           output.redirect = req.baseUrl + '?page=' + totalPages;
-           return res.json(output);
-         };
-         const sql = ` SELECT * FROM book_info ${where} LIMIT ${perPage*(page-1)}, ${perPage}`;
-         [rows] = await db.query(sql);
-       }
-       output = {...output, totalRows, perPage, totalPages, page, rows}; //取代輸出預設值 為正確數值
-       return res.json(output);
- });
+//        const perPage = 10;//設定每次顯示幾項
+//        let keyword = req.query.keyword || '';  //關鍵字由於發送方式是用get的 所以用query來抓字
+//        let page = req.query.page ? parseInt(req.query.page) : 1; //輸入第幾頁時會到第幾頁 預設是第一頁
+//        if(!page || page<1) {
+//          output.redirect = req.baseUrl; //
+//          return res.json(output);
+//        };
+//         let where = ' WHERE 1 ';
+//         if(keyword) {
+//           const kw_escaped = db.escape('%'+keyword+'%'); 
+//           where += ` AND ( 
+//            \`book_name\` LIKE ${kw_escaped} 
+//            OR
+//             \`description\` LIKE ${kw_escaped}
+//             )
+//           `;
+//         }
+//        const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`;   
+//        const [[{totalRows}]] = await db.query(t_sql);
+//        let totalPages = 0; //先宣告頁數 預設值 數字歸０
+//        let rows = [];  //宣告內容物 預設值 空陣列
+//        if(totalRows){
+//          totalPages = Math.ceil(totalRows/perPage); //總頁面數量 ＝ 總筆數/一頁出現筆數
+//          if(page > totalPages) {
+//            output.redirect = req.baseUrl + '?page=' + totalPages;
+//            return res.json(output);
+//          };
+//          const sql = ` SELECT * FROM book_info ${where} LIMIT ${perPage*(page-1)}, ${perPage}`;
+//          [rows] = await db.query(sql);
+//        }
+//        output = {...output, totalRows, perPage, totalPages, page, rows}; //取代輸出預設值 為正確數值
+//        return res.json(output);
+//  });
 
- router.post('/addToCart',async(req,res)=>{
-  const ISBN = req.body.ISBN;
-  const member =req.body.member;
-  const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
-  const [checkresult] = await db.query(checksql,[ISBN,member])
-  if(checkresult.length === 0){
-    const createsql = `INSERT INTO cart (member_id,ISBN,count,createAt,updateAt) VALUES (?,?,1,?,?)`;
-    const [result] = await db.query(createsql,[member,ISBN,currentDateTime,currentDateTime])
-     res.json(result)
-  }else{
-    const updatesql = `UPDATE cart SET count = ?, updateAt =? WHERE ISBN = ? AND member_id = ?`;
-    const currentCount = checkresult[0].count;
-    const newCount = currentCount + 1;
-    const [updateResult] = await db.query(updatesql, [newCount,currentDateTime,ISBN,member]);
-    res.json(updateResult)
-  }
-})
+//  router.post('/addToCart',async(req,res)=>{
+//   const ISBN = req.body.ISBN;
+//   const member =req.body.member;
+//   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+//   const [checkresult] = await db.query(checksql,[ISBN,member])
+//   if(checkresult.length === 0){
+//     const createsql = `INSERT INTO cart (member_id,ISBN,count,createAt,updateAt) VALUES (?,?,1,?,?)`;
+//     const [result] = await db.query(createsql,[member,ISBN,currentDateTime,currentDateTime])
+//      res.json(result)
+//   }else{
+//     const updatesql = `UPDATE cart SET count = ?, updateAt =? WHERE ISBN = ? AND member_id = ?`;
+//     const currentCount = checkresult[0].count;
+//     const newCount = currentCount + 1;
+//     const [updateResult] = await db.query(updatesql, [newCount,currentDateTime,ISBN,member]);
+//     res.json(updateResult)
+//   }
+// })
 router.get('/count',async(req,res)=>{
   const member = req.query.member
   const countsql = `SELECT count FROM cart WHERE member_id=?`
@@ -97,24 +97,38 @@ router.get('/count',async(req,res)=>{
   res.json(result);
 })
 
+//讀取購物車
 router.get('/cart',async(req,res)=>{
   const member = req.query.member;
-  const cartsql = `SELECT
+  const cartsql = 
+  `SELECT
   cart.member_id,
   book_info.pic,
   book_info.book_name,
   book_info.ISBN,
-  book_info.price,
+  book_info.price AS bookprice,
   cart.count,
-  cart.used_id
-  FROM cart 
-  JOIN book_info 
-  ON cart.ISBN = book_info.ISBN
-  WHERE cart.member_id = ?`;
+  cart.status_id,
+  used_log.price AS usedprice
+  FROM 
+  cart 
+  JOIN 
+  book_info 
+  ON 
+  cart.ISBN = book_info.ISBN
+  LEFT JOIN 
+  used_log
+  ON 
+  cart.status_id = used_log.status_id
+  AND
+  cart.ISBN=used_log.ISBN
+  WHERE 
+  cart.member_id = ?`;
   const [result] = await db.query(cartsql, [member]);
   res.send(result);
 })
 
+//針對新書做增加
 router.put('/cart/plus',async(req,res)=>{
     const ISBN = req.body.ISBN;
     const member = req.body.member;
@@ -130,6 +144,8 @@ router.put('/cart/plus',async(req,res)=>{
     }
   });
 
+
+//針對新書刪減
   router.put('/cart/cut', async (req, res) => {
     const ISBN = req.body.ISBN;
     const member = req.body.member;
@@ -153,14 +169,17 @@ router.put('/cart/plus',async(req,res)=>{
   });
 
 
+  //整體商品刪除
 router.post('/cart/delete',async(req,res)=>{
   const ISBN = req.body.ISBN;
   const member = req.body.member;
-  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
-  await db.query(deletesql, [ISBN,member]);
+  const status = req.body.status_id;
+  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND status_id=?`;
+  await db.query(deletesql, [ISBN,member,status]);
   res.json({ message: 'Item deleted from cart.' });
 })
 
+//讀取優惠卷
 router.get('/cart/coupon', async (req, res) => {
   const member = req.query.member; // 获取查询参数 member 的值
   const checksql = `
@@ -183,6 +202,7 @@ router.get('/cart/coupon', async (req, res) => {
   res.send(result);
 });
 
+//讀取知音幣
 router.get('/cart/usetoken', async (req, res) => {
   const member = req.query.member; // 获取查询参数 member 的值
   const checksql = `SELECT token FROM member WHERE member_id=?`;
@@ -190,7 +210,7 @@ router.get('/cart/usetoken', async (req, res) => {
   res.send(result);
 });
 
-
+//讀取收藏清單
 router.get("/cart/recommand",async(req,res)=>{
   const member = req.query.member;
   console.log(member);
@@ -274,10 +294,10 @@ router.post('/cart/complete',async(req,res)=>{
   }
   //處理cart 進 order_detail
   const createordersql = 
-  `INSERT INTO order_detail (ISBN, used_id, order_id, count, subtotal, createAt, updateAt)
+  `INSERT INTO order_detail (ISBN, status_id, order_id, count, subtotal, createAt, updateAt)
   SELECT 
   cart.ISBN,
-  cart.used_id, 
+  cart.status_id, 
   order_1.order_id,
   cart.count, 
   cart.count * book_info.price, 
@@ -288,8 +308,10 @@ router.post('/cart/complete',async(req,res)=>{
   JOIN book_info ON cart.ISBN = book_info.ISBN;`
   await db.query(createordersql,[currentDateTime,currentDateTime])
   //處理二手書 進入訂單資料表後 要將賣出狀況改成y
-  const updateused = `UPDATE used SET sale =? WHERE used_id IN (SELECT used_id FROM order_detail);`
-  await db.query(updateused,['y'])
+
+  const updateused =`UPDATE used SET sale =? where used_state=4 and deleted is null and (status_id, ISBN) in (SELECT status_id, ISBN FROM order_detail) order by updated LIMIT 1`
+  await db.query(updateused,["Y"])
+  
   //完成後清空
   const clearCartSQL = `DELETE FROM cart WHERE member_id = ?;`;
   await db.query(clearCartSQL,[member]);
@@ -332,13 +354,16 @@ router.post('/orderdetail',async(req,res)=>{
   order_1.shipping_cost,
   order_1.choosestore,
   order_1.createAt,
+  order_1.use_token,
+  order_1.use_coupon,
   order_detail.ISBN,
-  order_detail.used_id,
+  order_detail.status_id,
   order_detail.count,
   order_detail.subtotal,
-  book_info.price,
+  book_info.price AS bookprice,
   book_info.pic,
-  book_info.book_name
+  book_info.book_name,
+  used_log.price AS usedprice
   FROM
   order_detail
   JOIN
@@ -349,6 +374,12 @@ router.post('/orderdetail',async(req,res)=>{
   book_info
   ON
   order_detail.ISBN = book_info.ISBN
+  LEFT JOIN
+  used_log
+  ON
+  order_detail.status_id = used_log.status_id
+  AND
+  order_detail.ISBN = used_log.ISBN
   WHERE
   order_detail.order_id = ?;
  `
