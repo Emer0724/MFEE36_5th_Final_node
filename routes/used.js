@@ -48,6 +48,18 @@ router.get("/display/book_info", async (req, res) => {
   return res.json(rows);
 });
 
+//二手書上架書本資訊--搜尋列版
+router.get("/display/book_info1", async (req, res) => {
+  const ISBN = req.query.ISBN;
+  const keyword= db.escape(ISBN + "%")
+  console.log(keyword)
+  const sql =
+    `select ISBN,book_name,pic,publish,author from book_info where ISBN like ${keyword} limit 5 `;
+  const [rows] = await db.query(sql);
+  console.log(rows)
+  return res.json(rows);
+});
+
 //假token 過度用
 router.post("/login", async (req, res) => {
   const output = {
@@ -146,11 +158,16 @@ router.get("/change/item/", async (req, res) => {
       page: 1,
       rows: [],
       error: "",
+      notify: 0,
     };
     const perPage = 25;
     const member_id = res.locals.jwtData.member_id;
     let page = req.query.page ? parseInt(req.query.page) : 1;
     let state = "";
+    const sql_notify = `select count(1) as notify from used where used_state=1 and member_id=?`;
+    const [result] = await db.query(sql_notify, member_id);
+    output.notify = result[0].notify;
+    // console.log(output);
     if (!req.query.book_state || req.query.book_state === "all") {
       state = "";
     } else if (req.query.book_state === "3") {
@@ -172,8 +189,9 @@ router.get("/change/item/", async (req, res) => {
       return res.json(output);
     } else {
       const totalPages = Math.ceil(totalRows[0].total / perPage);
-      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${perPage * (page - 1)
-        }, ${perPage} `;
+      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${
+        perPage * (page - 1)
+      }, ${perPage} `;
       const [rows] = await db.query(sql);
 
       if (page > totalPages) {
@@ -379,16 +397,16 @@ router.post("/upload", upload_avatar.single("avatar"), async (req, res) => {
 
 router.post("/backstage_info", async (req, res) => {
   const data = { ...req.body };
-  console.log(data)
+  console.log(data);
   const ISBN = JSON.parse(data.ISBN);
-  console.log(ISBN)
-  let ISBN_1
-  if(Array.isArray(ISBN)){
-     ISBN_1 = ISBN.join(",");
-  }else{
-     ISBN_1=ISBN
+  console.log(ISBN);
+  let ISBN_1;
+  if (Array.isArray(ISBN)) {
+    ISBN_1 = ISBN.join(",");
+  } else {
+    ISBN_1 = ISBN;
   }
- 
+
   console.log(ISBN_1);
   const sql = `select a.*,b.book_name,b.price as original_price ,b.pic  from used as a join book_info as b using(ISBN) where used_id in(${ISBN_1})`;
   const [result] = await db.query(sql);
@@ -428,32 +446,28 @@ router.get("/profile", async (req, res) => {
     member_id = res.locals.jwtData.member_id;
     const sql = `select * from member where member_id=?`;
     const [result] = await db.query(sql, member_id);
-    console.log(result)
-    return res.json(result)
+    console.log(result);
+    return res.json(result);
   }
 });
 
-
-//關鍵字搜尋(未完成)
-router.get("/search", async (req, res) => {  //處理GET請求時執行async
-
+router.get("/search", async (req, res) => {
+  //處理GET請求時執行async
 
   let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
-  
-console.log(keyword)
- let  kw_escaped=''
-  if (keyword) {  //若有給關鍵字則執行以下  利用關鍵字在bookname、author欄位做搜尋
-      kw_escaped = db.escape("%" + keyword + "%");//%值 % SQL語法用於模糊匹配    .escape轉換跳脫字元
-    
-  }else{
-    return res.sand('請輸入關鍵字')
+
+  console.log(keyword);
+  let kw_escaped = "";
+  if (keyword) {
+    //若有給關鍵字則執行以下  利用關鍵字在bookname、author欄位做搜尋
+    kw_escaped = db.escape("%" + keyword + "%"); //%值 % SQL語法用於模糊匹配    .escape轉換跳脫字元
+  } else {
+    return res.sand("請輸入關鍵字");
   }
 
-
-
-  const sql=`select book_name,ISBN from book_info where book_name like ${kw_escaped} limit 10`
-  const [result]=await db.query(sql)
-  return res.json(result)
+  const sql = `select book_name,ISBN from book_info where book_name like ${kw_escaped} limit 10`;
+  const [result] = await db.query(sql);
+  return res.json(result);
 
   // const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
   // console.log(t_sql);
@@ -473,7 +487,5 @@ console.log(keyword)
   // output = { ...output, totalRows, perPage, totalPages, page, rows, keyword };
   // return res.json(output);
 });
-
-
 
 module.exports = router;
