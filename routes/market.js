@@ -217,6 +217,7 @@ router.get("/usedList", async (req, res) => {
 //wishList
 router.get("/wishlist", async (req, res) => {
    const member_id = req.query.member_id;
+   const currentPage = req.query.page || 1; // 從 query 參數中取得頁碼，預設為 1
    const itemsPerPage = 16; // 每頁顯示的資料筆數
    console.log(member_id);
    console.log('好吵');
@@ -226,21 +227,16 @@ router.get("/wishlist", async (req, res) => {
       const [result] = await db.query(sql1, [member_id]);
       console.log(result);
 
-      const paginatedData = [];
-      let currentPageData = [];
+      // 查詢該會員的總清單數量
+      const totalCountSql = `SELECT COUNT(*) as total FROM recommand WHERE member_id=?`;
+      const [totalCountResult] = await db.query(totalCountSql, [member_id]);
+      const totalRows = totalCountResult[0].total;
+      const totalPages = Math.ceil(totalRows / itemsPerPage);
 
-      // 將查詢結果分頁處理
-      for (let i = 0; i < result.length; i++) {
-         currentPageData.push(result[i]);
-
-         if (currentPageData.length === itemsPerPage || i === result.length - 1) {
-            paginatedData.push([...currentPageData]);
-            currentPageData = [];
-         }
-      }
-
-      const currentPage = req.query.page || 1; // 從 query 參數中取得頁碼，預設為 1
-      const totalPages = paginatedData.length;
+      // 計算分頁的起始索引並查詢分頁資料
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const sql_p = `SELECT * FROM recommand WHERE member_id=? LIMIT ${startIndex}, ${itemsPerPage}`;
+      const [rows] = await db.query(sql_p, [member_id]);
 
       // 檢查頁碼是否超過總頁數，如果是則重新導向至最後一頁
       if (currentPage > totalPages) {
@@ -248,18 +244,14 @@ router.get("/wishlist", async (req, res) => {
          return res.redirect(`${req.baseUrl}?page=${lastPage}`);
       }
 
-      // 根據頁碼取得該頁的資料
-      const pageIndex = currentPage - 1;
-      const rows = paginatedData[pageIndex];
-
       // 回傳分頁資訊與資料
       console.log(totalPages);
       console.log('胖老爹');
       console.log(rows);
       console.log(totalPages);
-      console.log(result.length);
+      console.log(totalRows);
 
-      return res.json({ rows, totalRows: result.length, totalPages, page: currentPage });
+      return res.json({ rows, totalRows, totalPages, page: currentPage });
    } catch (error) {
       console.error('查詢資料庫發生錯誤', error);
       res.status(500).json({ error: '查詢資料庫發生錯誤' });
