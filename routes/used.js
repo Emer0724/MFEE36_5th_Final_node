@@ -48,6 +48,18 @@ router.get("/display/book_info", async (req, res) => {
   return res.json(rows);
 });
 
+//二手書上架書本資訊--搜尋列版
+router.get("/display/book_info1", async (req, res) => {
+  const ISBN = req.query.ISBN;
+  const keyword= db.escape(ISBN + "%")
+  console.log(keyword)
+  const sql =
+    `select ISBN,book_name,pic,publish,author from book_info where ISBN like ${keyword} limit 5 `;
+  const [rows] = await db.query(sql);
+  console.log(rows)
+  return res.json(rows);
+});
+
 //假token 過度用
 router.post("/login", async (req, res) => {
   const output = {
