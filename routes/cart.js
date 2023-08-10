@@ -278,7 +278,7 @@ router.post('/cart/complete',async(req,res)=>{
   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   const [formresult] = await 
   db.query(createsql,[randomNumber,member,formdata.recipientName,formdata.recipientPhone,formdata.recipientAddress,ship,shipcost,formdata.recipientstore,pricefinal,payment,1,currentDateTime,currentDateTime,countdata.selectedCurrencyOption,coupon])
-  res.send({ order_id: randomNumber, result: formresult });
+  
   //如果會員使用知音幣,會員幣要清除
 
   if(countdata.selectedCurrencyOption>0){
@@ -296,21 +296,42 @@ router.post('/cart/complete',async(req,res)=>{
   const createordersql = 
   `INSERT INTO order_detail (ISBN, status_id, order_id, count, subtotal, createAt, updateAt)
   SELECT 
-  cart.ISBN,
-  cart.status_id, 
-  order_1.order_id,
-  cart.count, 
-  cart.count * book_info.price, 
+  a.ISBN,
+  a.status_id, 
+  latest_order.order_id,
+  a.count,
+  CASE 
+  WHEN a.status_id IS NULL 
+  THEN a.count * b.price 
+  ELSE a.count * c.price 
+  END, 
   ?,
   ?
-  FROM cart
-  JOIN order_1 ON cart.member_id = order_1.member_id
-  JOIN book_info ON cart.ISBN = book_info.ISBN;`
-  await db.query(createordersql,[currentDateTime,currentDateTime])
+  FROM 
+  cart AS a
+  JOIN 
+  (SELECT order_id, member_id
+   FROM order_1
+   WHERE order_id IN (SELECT MAX(order_id) FROM order_1 GROUP BY member_id)
+   ) AS latest_order
+  ON 
+  a.member_id = latest_order.member_id
+  JOIN 
+  book_info AS b
+  ON 
+  a.ISBN = b.ISBN
+  LEFT JOIN 
+  used_log AS c
+  ON 
+  a.status_id = c.status_id
+  AND
+  a.ISBN=c.ISBN ;`
+  const [orderdetail] = await db.query(createordersql,[currentDateTime,currentDateTime])
+  res.send({ order_id: randomNumber, result: formresult ,orderdetail});
   //處理二手書 進入訂單資料表後 要將賣出狀況改成y
 
-  const updateused =`UPDATE used SET sale =? where used_state=4 and deleted is null and (status_id, ISBN) in (SELECT status_id, ISBN FROM order_detail) order by updated LIMIT 1`
-  await db.query(updateused,["Y"])
+  const updateused =`UPDATE used SET sale =?,updated=? where used_state=4 and deleted is null and (status_id, ISBN) in (SELECT status_id, ISBN FROM order_detail) order by updated LIMIT 1`
+  await db.query(updateused,["Y",currentDateTime])
   
   //完成後清空
   const clearCartSQL = `DELETE FROM cart WHERE member_id = ?;`;
@@ -335,7 +356,9 @@ router.get('/order',async(req,res)=>{
   FROM
   order_1
   WHERE
-  member_id =?;
+  member_id =?
+  ORDER BY 
+  createAt DESC;
   `;
   //付款方式 物流方式 運費 狀態 要前端換算
   //門市寄貨跟宅配擇一的判斷
