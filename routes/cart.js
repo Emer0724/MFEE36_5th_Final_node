@@ -93,7 +93,6 @@ router.get("/count", async (req, res) => {
   const member = req.query.member;
   const countsql = `SELECT count FROM cart WHERE member_id=?`;
   const [result] = await db.query(countsql, [member]);
-  console.log(result);
   res.json(result);
 });
 
@@ -179,7 +178,11 @@ router.post("/cart/delete", async (req, res) => {
   const ISBN = req.body.ISBN;
   const member = req.body.member;
   const status = req.body.status_id;
-  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND status_id=?`;
+  console.log('hiiii');
+  console.log(status);
+  console.log(member);
+  console.log(ISBN);
+  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND (status_id = ? OR status_id IS NULL)`;
   await db.query(deletesql, [ISBN, member, status]);
   res.json({ message: "Item deleted from cart." });
 });
