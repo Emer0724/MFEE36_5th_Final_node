@@ -315,7 +315,7 @@ router.post("/cart/complete", async (req, res) => {
       countdata.selectcouponmid,
     ]);
   }
-  res.send({ order_id: randomNumber, result: formresult });
+
   //處理cart 進 order_detail
   const createordersql = `INSERT INTO order_detail (ISBN, status_id, order_id, count, subtotal, createAt, updateAt)
   SELECT 
@@ -363,6 +363,7 @@ router.post("/cart/complete", async (req, res) => {
   //完成後清空
   const clearCartSQL = `DELETE FROM cart WHERE member_id = ?;`;
   await db.query(clearCartSQL, [member]);
+  res.send({ order_id: randomNumber, result: formresult });
 });
 // member_id,customer_name,customer_phone,customer_address,shipping,shipping_cost,choosestore,total_price,payment,status,createAt,updateAt,use_token,use_coupon
 router.get("/order", async (req, res) => {
@@ -383,7 +384,7 @@ router.get("/order", async (req, res) => {
   WHERE
   member_id =?
   ORDER BY 
-  createAt DESC;
+  updateAt DESC;
   `;
   //付款方式 物流方式 運費 狀態 要前端換算
   //門市寄貨跟宅配擇一的判斷
