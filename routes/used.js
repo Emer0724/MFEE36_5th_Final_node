@@ -51,12 +51,11 @@ router.get("/display/book_info", async (req, res) => {
 //二手書上架書本資訊--搜尋列版
 router.get("/display/book_info1", async (req, res) => {
   const ISBN = req.query.ISBN;
-  const keyword= db.escape(ISBN + "%")
-  console.log(keyword)
-  const sql =
-    `select ISBN,book_name,pic,publish,author from book_info where ISBN like ${keyword} limit 5 `;
+  const keyword = db.escape(ISBN + "%");
+  console.log(keyword);
+  const sql = `select ISBN,book_name,pic,publish,author from book_info where ISBN like ${keyword} limit 5 `;
   const [rows] = await db.query(sql);
-  console.log(rows)
+  console.log(rows);
   return res.json(rows);
 });
 
@@ -467,6 +466,7 @@ router.get("/search", async (req, res) => {
 
   const sql = `select book_name,ISBN from book_info where book_name like ${kw_escaped} limit 10`;
   const [result] = await db.query(sql);
+  // console.log(result);
   return res.json(result);
 
   // const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
