@@ -18,60 +18,25 @@ const currentDateTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
 //    output.jwtData=res.locals.jwtData
 //  }
 
-//關鍵字搜尋(未完成)
-router.get("/", async (req, res) => {
-  //處理GET請求時執行async
-  let output = {
-    redirect: "", //重新導向
-    totalRows: 0, //表示
-    perPage: 25, //每頁顯示25筆資料
-    totalPages: 0, //總頁數
-    page: 1, //目前頁數
-    rows: [], //空陣列 用於存放內容
-  };
-  const perPage = 16; //處理分頁與關鍵字搜尋
-  let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
-  if (!page || page < 1) {
-    //若'page'為undifined 或小於一
-    output.redirect = req.baseUrl;
-    return res.json(output); //則回第一頁
-  }
 
-  let where = " WHERE 1 ";
-  if (keyword) {
-    //若有給關鍵字則執行以下  利用關鍵字在bookname、author欄位做搜尋
-    const kw_escaped = db.escape("%" + keyword + "%"); //%值 % SQL語法用於模糊匹配    .escape轉換跳脫字元
-    where += ` AND ( 
-           \`bookname\` LIKE ${kw_escaped}  
-           OR
-           \`author\` LIKE ${kw_escaped}
-           OR
-           \`ISBN\` LIKE ${kw_escaped}
-           )
-         `;
-  }
+//主頁展示-亂數
+router.get("/display_random", async (req, res) => {
+  try {
+    console.log('隨機囉')
+    // 執行 SQL 查詢，使用 ORDER BY RAND() 取得隨機資料
+    const [rows] = await db.query(`SELECT * FROM book_info ORDER BY RAND() LIMIT 16`);
 
-  const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
-  console.log(t_sql);
-  const [[{ totalRows }]] = await db.query(t_sql); //解構賦值
-  let totalPages = 0;
-  let rows = [];
-  if (totalRows) {
-    totalPages = Math.ceil(totalRows / perPage); //將總欄數除以上方設定的每頁資料筆數 來算出總頁數 Math.ceil無條件進位
-    if (page > totalPages) {
-      //當輸入頁數大於最大頁數執行以下
-      output.redirect = req.baseUrl + "?page=" + totalPages; //導向最後一頁
-      return res.json(output);
-    }
-    const sql = ` SELECT * FROM book_info ${where} LIMIT ${
-      perPage * (page - 1)
-    }, ${perPage}`;
-    [rows] = await db.query(sql);
+
+    console.log(`rows: ${rows}`);
+
+    // 回傳 JSON 格式的資料作為 API 響應
+    return res.json({ rows });
+  } catch (error) {
+    // 處理錯誤並回傳錯誤訊息
+    console.error('Error fetching data:', error);
+    return res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
-  output = { ...output, totalRows, perPage, totalPages, page, rows, keyword };
-  return res.json(output);
 });
-
 //主頁展示
 router.get("/display", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
@@ -144,11 +109,11 @@ router.post("/recommand", async (req, res) => {
     }
 
 
-      return res.json({ rows })
-   } catch (error) {
-      console.error('查詢資料庫發生錯誤', error);
-      res.status(500).json({ error: '查詢資料庫發生錯誤' });
-   }
+    return res.json({ rows })
+  } catch (error) {
+    console.error('查詢資料庫發生錯誤', error);
+    res.status(500).json({ error: '查詢資料庫發生錯誤' });
+  }
 })
 //收藏功能--刪除
 router.delete("/recommand", async (req, res) => {
@@ -241,56 +206,33 @@ router.get("/usedList", async (req, res) => {
 });
 
 //wishList
+
 router.get("/wishlist", async (req, res) => {
-   const member_id = req.query.member_id;
-   const itemsPerPage = 16; // 每頁顯示的資料筆數
-   console.log(member_id);
-   console.log('好吵');
-   try {
-      // 查詢該會員的推薦清單
-      const sql1 = `select * from recommand where member_id=? `;
-      const [result] = await db.query(sql1, [member_id]);
-      console.log(result);
-
-      const paginatedData = [];
-      let currentPageData = [];
-
-      // 將查詢結果分頁處理
-      for (let i = 0; i < result.length; i++) {
-         currentPageData.push(result[i]);
-
-         if (currentPageData.length === itemsPerPage || i === result.length - 1) {
-            paginatedData.push([...currentPageData]);
-            currentPageData = [];
-         }
-      }
-
-      const currentPage = req.query.page || 1; // 從 query 參數中取得頁碼，預設為 1
-      const totalPages = paginatedData.length;
-
-      // 檢查頁碼是否超過總頁數，如果是則重新導向至最後一頁
-      if (currentPage > totalPages) {
-         const lastPage = totalPages;
-         return res.redirect(`${req.baseUrl}?page=${lastPage}`);
-      }
-
-      // 根據頁碼取得該頁的資料
-      const pageIndex = currentPage - 1;
-      const rows = paginatedData[pageIndex];
-
-      // 回傳分頁資訊與資料
-      console.log(totalPages);
-      console.log('胖老爹');
-      console.log(rows);
-      console.log(totalPages);
-      console.log(result.length);
-
-      return res.json({ rows, totalRows: result.length, totalPages, page: currentPage });
-   } catch (error) {
-      console.error('查詢資料庫發生錯誤', error);
-      res.status(500).json({ error: '查詢資料庫發生錯誤' });
-   }
+  const member_id = req.query.member_id;
+  console.log(member_id)
+  try {
+    const sql = `select * from recommand where member_id=? `
+    const [rows] = await db.query(sql, [member_id])
+    return res.json([rows])
+  } catch (error) {
+    console.error('查詢資料庫發生錯誤', error);
+    res.status(500).json({ error: '查詢資料庫發生錯誤' });
+  }
 });
+//wishList-刪除
+router.delete("/removewish", async (req, res) => {
+  const { ISBN, member_id } = req.body
+  console.log(123)
+  console.log(ISBN)
+  console.log(member_id)
+  try {
+    await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
+    return res.json({ message: "刪除成功" });
+  } catch (error) {
+    console.error('刪除資料庫發生錯誤', error);
+    res.status(500).json({ error: '刪除資料庫發生錯誤' });
+  }
+})
 
 // router.get("/wishlist", async (req, res) => {
 //    const member_id = req.query.member_id;
@@ -344,10 +286,10 @@ router.get("/coupon", async (req, res) => {
 
 //優惠碼
 router.post('/getCoupon', async (req, res) => {
-   const { code, member_id } = req.body; // 從請求中取得 member_id 和 code
-   // console.log(code)
-   // console.log(member_id)
-   // console.log('有連到，改寫後端')
+  const { code, member_id } = req.body; // 從請求中取得 member_id 和 code
+  // console.log(code)
+  // console.log(member_id)
+  // console.log('有連到，改寫後端')
 
   const sql1 = `SELECT coupon_id FROM coupon WHERE code = ?`;
   const [rows1] = await db.query(sql1, code);
@@ -356,19 +298,19 @@ router.post('/getCoupon', async (req, res) => {
     const couponId = rows1[0].coupon_id;
     console.log("取得 coupon_id:", couponId);
 
-      // 檢查優惠券是否已經被該會員新增過
-      const sqlCheck = `SELECT * FROM member_coupon WHERE member_id = ? AND coupon_id = ?`;
-      const [existingRows] = await db.query(sqlCheck, [member_id, couponId]);
+    // 檢查優惠券是否已經被該會員新增過
+    const sqlCheck = `SELECT * FROM member_coupon WHERE member_id = ? AND coupon_id = ?`;
+    const [existingRows] = await db.query(sqlCheck, [member_id, couponId]);
 
-      if (existingRows.length > 0) {
-         console.log('該會員已經新增過此優惠券');
-         res.status(400).json({ error: '該優惠券已經新增過' });
-         return;
-      }
+    if (existingRows.length > 0) {
+      console.log('該會員已經新增過此優惠券');
+      res.status(400).json({ error: '該優惠券已經新增過' });
+      return;
+    }
 
-      // 新增資料到 member_coupon
-      const sql2 = `INSERT INTO member_coupon (member_id, coupon_id) VALUES (?, ?)`;
-      const values = [member_id, couponId];
+    // 新增資料到 member_coupon
+    const sql2 = `INSERT INTO member_coupon (member_id, coupon_id) VALUES (?, ?)`;
+    const values = [member_id, couponId];
 
     try {
       await db.query(sql2, values);
