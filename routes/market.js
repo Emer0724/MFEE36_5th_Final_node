@@ -18,59 +18,25 @@ const currentDateTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
 //    output.jwtData=res.locals.jwtData
 //  }
 
-//關鍵字搜尋(未完成)
-router.get("/", async (req, res) => {
-  //處理GET請求時執行async
-  let output = {
-    redirect: "", //重新導向
-    totalRows: 0, //表示
-    perPage: 25, //每頁顯示25筆資料
-    totalPages: 0, //總頁數
-    page: 1, //目前頁數
-    rows: [], //空陣列 用於存放內容
-  };
-  const perPage = 16; //處理分頁與關鍵字搜尋
-  let keyword = req.query.keyword || ""; //設置關鍵字變數,req.query.keyword  reqeust物件的方法 取得get方法的query string的鍵 這邊的"keyword"是自定義的
-  if (!page || page < 1) {
-    //若'page'為undifined 或小於一
-    output.redirect = req.baseUrl;
-    return res.json(output); //則回第一頁
-  }
 
-  let where = " WHERE 1 ";
-  if (keyword) {
-    //若有給關鍵字則執行以下  利用關鍵字在bookname、author欄位做搜尋
-    const kw_escaped = db.escape("%" + keyword + "%"); //%值 % SQL語法用於模糊匹配    .escape轉換跳脫字元
-    where += ` AND ( 
-           \`bookname\` LIKE ${kw_escaped}  
-           OR
-           \`author\` LIKE ${kw_escaped}
-           OR
-           \`ISBN\` LIKE ${kw_escaped}
-           )
-         `;
-  }
+//主頁展示-亂數
+router.get("/display_random", async (req, res) => {
+  try {
+    console.log('隨機囉')
+    // 執行 SQL 查詢，使用 ORDER BY RAND() 取得隨機資料
+    const [rows] = await db.query(`SELECT * FROM book_info ORDER BY RAND() LIMIT 16`);
 
-  const t_sql = `SELECT COUNT(1) totalRows FROM book_info ${where}`; //計算符合WHERE的總行數 在上方已經改寫了WHERE內容了
-  console.log(t_sql);
-  const [[{ totalRows }]] = await db.query(t_sql); //解構賦值
-  let totalPages = 0;
-  let rows = [];
-  if (totalRows) {
-    totalPages = Math.ceil(totalRows / perPage); //將總欄數除以上方設定的每頁資料筆數 來算出總頁數 Math.ceil無條件進位
-    if (page > totalPages) {
-      //當輸入頁數大於最大頁數執行以下
-      output.redirect = req.baseUrl + "?page=" + totalPages; //導向最後一頁
-      return res.json(output);
-    }
-    const sql = ` SELECT * FROM book_info ${where} LIMIT ${perPage * (page - 1)
-      }, ${perPage}`;
-    [rows] = await db.query(sql);
+
+    console.log(`rows: ${rows}`);
+
+    // 回傳 JSON 格式的資料作為 API 響應
+    return res.json({ rows });
+  } catch (error) {
+    // 處理錯誤並回傳錯誤訊息
+    console.error('Error fetching data:', error);
+    return res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
-  output = { ...output, totalRows, perPage, totalPages, page, rows, keyword };
-  return res.json(output);
 });
-
 //主頁展示
 router.get("/display", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
