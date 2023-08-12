@@ -41,6 +41,8 @@ router.get("/display_random", async (req, res) => {
 router.get("/display", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
   const label = req.query.label;
+  console.log(category_id)
+  console.log(label)
   try {
     const sql = `select * from book_info where category_id=? `;
     const [rows] = await db.query(sql, category_id); //將要求送往資料庫
@@ -272,8 +274,8 @@ router.delete("/removewish", async (req, res) => {
 router.get("/coupon", async (req, res) => {
   const member_id = req.query.member_id;
   try {
-    const sql1 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS null`;
-    const sql2 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS NOT null`;
+    const sql1 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS null`; //查詢未使用的優惠券資料
+    const sql2 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS NOT null`;//查詢已使用的優惠券資料
     const [rows1] = await db.query(sql1, member_id);
     const [rows2] = await db.query(sql2, member_id);
     console.log([rows1, rows2]);
