@@ -144,6 +144,7 @@ router.patch("/display/delete_item/:used_id", async (req, res) => {
 });
 //二手書進度
 router.get("/change/item/", async (req, res) => {
+  console.log(123);
   if (!res.locals.jwtData) {
     output.error = "沒有 token 驗證";
     return res.json(output);
@@ -198,6 +199,7 @@ router.get("/change/item/", async (req, res) => {
         return output;
       }
       output = { ...output, perPage, totalPages, page, rows };
+
       return res.json(output);
     }
   }
