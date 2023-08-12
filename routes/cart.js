@@ -158,13 +158,13 @@ router.put("/cart/cut", async (req, res) => {
   ]);
 
   if (updateResult.affectedRows === 1 && updateResult.changedRows === 1) {
-    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ?`;
+    const checkSql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND status_id is null`;
     const [checkResult] = await db.query(checkSql, [ISBN, member]);
     const updatedCount = checkResult[0].count;
     if (updatedCount > 0) {
       res.json({ message: "商品已減少." });
     } else {
-      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ?`;
+      const deleteSql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND status_id is null`;
       await db.query(deleteSql, [ISBN, member]);
       res.json({ message: "商品已刪除" });
     }
