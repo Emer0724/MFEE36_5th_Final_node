@@ -260,7 +260,7 @@ router.get("/:blogsid", async (req, res) => {
 router.get("/checklike/:blog_sid", async (req, res) => {
   try {
     const blog_sid = req.params.blog_sid;
-    const query = "SELECT COUNT(*) AS count FROM `like` WHERE blog_sid = ?";
+    const query = "SELECT COUNT(*) AS count FROM `like1` WHERE blog_sid = ?";
     const [result] = await db.query(query, [blog_sid]);
     const isAdded = result[0].count > 0;
     return res.json({ isAdded });
