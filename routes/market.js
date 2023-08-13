@@ -22,12 +22,12 @@ const currentDateTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
 //主頁展示-亂數
 router.get("/display_random", async (req, res) => {
   try {
-    console.log('隨機囉')
+    // console.log('隨機囉')
     // 執行 SQL 查詢，使用 ORDER BY RAND() 取得隨機資料
     const [rows] = await db.query(`SELECT * FROM book_info ORDER BY RAND() LIMIT 16`);
 
 
-    console.log(`rows: ${rows}`);
+    // console.log(`rows: ${rows}`);
 
     // 回傳 JSON 格式的資料作為 API 響應
     return res.json({ rows });
@@ -41,8 +41,8 @@ router.get("/display_random", async (req, res) => {
 router.get("/display", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
   const label = req.query.label;
-  console.log(category_id)
-  console.log(label)
+  // console.log(category_id)
+  // console.log(label)
   try {
     const sql = `select * from book_info where category_id=? `;
     const [rows] = await db.query(sql, category_id); //將要求送往資料庫
@@ -58,7 +58,7 @@ router.get("/display", async (req, res) => {
         const lastPage = totalPages;
         return res.redirect(`${req.baseUrl}?page=${lastPage}`);
       }
-      console.log(totalPages);
+      // console.log(totalPages);
       return res.json({ rows, totalRows, category_id, label, totalPages });
     }
   } catch (error) {
@@ -84,9 +84,36 @@ router.get("/detail", async (req, res) => {
 router.get("/bcs", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID
   try {
-    const sql = `select * from category where category_id=? `;
+    const sql = `select * from category where category_id=? `; //避免被攻擊 不直接把變數帶入
     const [rows] = await db.query(sql, category_id);
     return res.json({ rows });
+  } catch (error) {
+    console.error("查詢資料庫發生錯誤", error);
+    res.status(500).json({ error: "查詢資料庫發生錯誤" });
+  }
+});
+//麵包屑親分類亂數取值
+router.get("/bcs_parent", async (req, res) => {
+  const category_name = req.query.category_name;
+  console.log(`category_name:${category_name}`);
+  try {
+    const sql = `select a.*,c.category_name from book_info as a join category  as b using(category_id) LEFT JOIN category as c on b.category_parentID=c.category_id WHERE c.category_name=? ORDER by RAND() LIMIT 16`
+    const [rows] = await db.query(sql, [category_name])
+    console.log(`rows :${rows}`)
+    return res.json({ rows });
+
+    // const sql = `select * from category where category_name=? `; //避免被攻擊 不直接把變數帶入
+    // const [rows] = await db.query(sql, [category_name]);   //category_name原為 字串 需用[ ]把分號去掉 才可正常搜尋
+    // const category_id = rows[0].category_id
+    // console.log(`123:${category_id}`)
+    // const sql2 = `select * from category where category_parentID=?`
+    // const [rows2] = await db.query(sql2, category_id)
+    // console.log(rows2)
+
+    // const sql3 = `SELECT * FROM book_info WHERE category_id=? ORDER BY RAND() LIMIT 16`
+    // const [rows3] = await db.query(sql2, category_id)
+    // console.log(`rows3:${rows3}`)
+    // return res.json(rows3);
   } catch (error) {
     console.error("查詢資料庫發生錯誤", error);
     res.status(500).json({ error: "查詢資料庫發生錯誤" });
@@ -96,7 +123,7 @@ router.get("/bcs", async (req, res) => {
 //收藏功能
 router.post("/recommand", async (req, res) => {
   const { member_id, ISBN } = req.body;
-  console.log(member_id);
+  // console.log(member_id);
   try {
     const [rows] = await db.query(
       `SELECT * FROM recommand WHERE ISBN='${ISBN}' AND member_id=${member_id};`
@@ -133,8 +160,8 @@ router.delete("/recommand", async (req, res) => {
 //加入購物車
 router.post("/addToCart", async (req, res) => {
   const { member_id, ISBN } = req.body; // 從請求中取得 member_id 和 ISBN
-  console.log(member_id);
-  console.log(ISBN);
+  // console.log(member_id);
+  // console.log(ISBN);
   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND status_id is null	`;
   const [checkresult] = await db.query(checksql, [ISBN, member_id]);
   if (checkresult.length === 0) {
@@ -164,9 +191,9 @@ router.post("/addToCart", async (req, res) => {
 //加入購物車 (二手)
 router.post("/addToCartUsed", async (req, res) => {
   const { member_id, ISBN, status_id } = req.body; // 從請求中取得 member_id 和 ISBN
-  console.log(member_id);
-  console.log(ISBN);
-  console.log(status_id);
+  // console.log(member_id);
+  // console.log(ISBN);
+  // console.log(status_id);
   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND status_id = ?`;
   const [checkresult] = await db.query(checksql, [ISBN, member_id, status_id]);
   if (checkresult.length === 0) {
@@ -211,7 +238,7 @@ router.get("/usedList", async (req, res) => {
 
 router.get("/wishlist", async (req, res) => {
   const member_id = req.query.member_id;
-  console.log(member_id)
+  // console.log(member_id)
   try {
     const sql = `select * from recommand where member_id=? `
     const [rows] = await db.query(sql, [member_id])
@@ -224,9 +251,9 @@ router.get("/wishlist", async (req, res) => {
 //wishList-刪除
 router.delete("/removewish", async (req, res) => {
   const { ISBN, member_id } = req.body
-  console.log(123)
-  console.log(ISBN)
-  console.log(member_id)
+  // console.log(123)
+  // console.log(ISBN)
+  // console.log(member_id)
   try {
     await db.query(`DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`);
     return res.json({ message: "刪除成功" });
@@ -236,30 +263,12 @@ router.delete("/removewish", async (req, res) => {
   }
 })
 
-// router.get("/wishlist", async (req, res) => {
-//    const member_id = req.query.member_id;
-//    console.log(member_id)
-//    try {
-//       const sql = `select * from recommand where member_id=? `
-//       const [rows] = await db.query(sql, [member_id])
-//       const totalRows = rows.length;
-//       const totalPages = Math.ceil(totalRows / 16);
-//       console.log('胖老爹')
-//       console.log(rows)
-//       console.log(totalPages)
-//       console.log(totalRows)
-//       return res.json({ rows, totalRows, totalPages })
-//    } catch (error) {
-//       console.error('查詢資料庫發生錯誤', error);
-//       res.status(500).json({ error: '查詢資料庫發生錯誤' });
-//    }
-// });
 //wishList-刪除
 router.delete("/removewish", async (req, res) => {
   const { ISBN, member_id } = req.body;
-  console.log(123);
-  console.log(ISBN);
-  console.log(member_id);
+  // console.log(123);
+  // console.log(ISBN);
+  // console.log(member_id);
   try {
     await db.query(
       `DELETE FROM recommand WHERE ISBN=${ISBN} AND member_id=${member_id}`
@@ -278,7 +287,7 @@ router.get("/coupon", async (req, res) => {
     const sql2 = `select coupon_id,use_status,coupon_mid,coupon_name,coupon_discount,end_time from member_coupon JOIN coupon using(coupon_id) where member_id=?AND use_status IS NOT null`;//查詢已使用的優惠券資料
     const [rows1] = await db.query(sql1, member_id);
     const [rows2] = await db.query(sql2, member_id);
-    console.log([rows1, rows2]);
+    // console.log([rows1, rows2]);
     return res.json([rows1, rows2]);
   } catch (error) {
     console.error("查詢資料庫發生錯誤", error);
@@ -298,7 +307,7 @@ router.post('/getCoupon', async (req, res) => {
 
   if (rows1.length > 0) {
     const couponId = rows1[0].coupon_id;
-    console.log("取得 coupon_id:", couponId);
+    // console.log("取得 coupon_id:", couponId);
 
     // 檢查優惠券是否已經被該會員新增過
     const sqlCheck = `SELECT * FROM member_coupon WHERE member_id = ? AND coupon_id = ?`;
