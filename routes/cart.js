@@ -178,12 +178,19 @@ router.post("/cart/delete", async (req, res) => {
   const ISBN = req.body.ISBN;
   const member = req.body.member;
   const status = req.body.status_id;
+  let status_res=''
+  if(status){
+    status_res=` AND status_id='${status}'`
+  }else{
+    status_res=` AND status_id is null`
+  }
   console.log('hiiii');
   console.log(status);
   console.log(member);
   console.log(ISBN);
-  const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND (status_id = ? OR status_id IS NULL)`;
-  await db.query(deletesql, [ISBN, member, status]);
+  // const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? AND (status_id = ? OR status_id IS NULL)`;
+   const deletesql = `DELETE FROM cart WHERE ISBN = ? AND member_id = ? ${status_res}`;
+  await db.query(deletesql, [ISBN, member]);
   res.json({ message: "Item deleted from cart." });
 });
 
