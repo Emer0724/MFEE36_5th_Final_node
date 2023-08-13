@@ -99,21 +99,7 @@ router.get("/bcs_parent", async (req, res) => {
   try {
     const sql = `select a.*,c.category_name from book_info as a join category  as b using(category_id) LEFT JOIN category as c on b.category_parentID=c.category_id WHERE c.category_name=? ORDER by RAND() LIMIT 16`
     const [rows] = await db.query(sql, [category_name])
-    console.log(`rows :${rows}`)
-    return res.json({ rows });
-
-    // const sql = `select * from category where category_name=? `; //避免被攻擊 不直接把變數帶入
-    // const [rows] = await db.query(sql, [category_name]);   //category_name原為 字串 需用[ ]把分號去掉 才可正常搜尋
-    // const category_id = rows[0].category_id
-    // console.log(`123:${category_id}`)
-    // const sql2 = `select * from category where category_parentID=?`
-    // const [rows2] = await db.query(sql2, category_id)
-    // console.log(rows2)
-
-    // const sql3 = `SELECT * FROM book_info WHERE category_id=? ORDER BY RAND() LIMIT 16`
-    // const [rows3] = await db.query(sql2, category_id)
-    // console.log(`rows3:${rows3}`)
-    // return res.json(rows3);
+    return res.json(rows);
   } catch (error) {
     console.error("查詢資料庫發生錯誤", error);
     res.status(500).json({ error: "查詢資料庫發生錯誤" });
