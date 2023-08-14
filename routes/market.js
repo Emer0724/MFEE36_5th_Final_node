@@ -177,9 +177,9 @@ router.post("/addToCart", async (req, res) => {
 //加入購物車 (二手)
 router.post("/addToCartUsed", async (req, res) => {
   const { member_id, ISBN, status_id } = req.body; // 從請求中取得 member_id 和 ISBN
-  // console.log(member_id);
-  // console.log(ISBN);
-  // console.log(status_id);
+  console.log(member_id);
+  console.log(ISBN);
+  console.log(status_id);
   const checksql = `SELECT count FROM cart WHERE ISBN = ? AND member_id = ? AND status_id = ?`;
   const [checkresult] = await db.query(checksql, [ISBN, member_id, status_id]);
   if (checkresult.length === 0) {
