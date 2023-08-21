@@ -189,9 +189,8 @@ router.get("/change/item/", async (req, res) => {
       return res.json(output);
     } else {
       const totalPages = Math.ceil(totalRows[0].total / perPage);
-      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${
-        perPage * (page - 1)
-      }, ${perPage} `;
+      const sql = `select used_id,book_name,ISBN,used_state,status_name,a.price from used as a left join book_info using(ISBN) left join book_status using(status_id) where a.deleted is null and member_id=${member_id} ${state} order by used_state,a.updated desc limit ${perPage * (page - 1)
+        }, ${perPage} `;
       const [rows] = await db.query(sql);
 
       if (page > totalPages) {
@@ -368,7 +367,7 @@ router.get("/getUsedinfo", async (req, res) => {
     return res.json([rows, rows_member]);
   }
 });
-
+//SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY','')); 記得用這個來更改SQL資料庫的設定來啟用GROUP BY
 router.get("/usedlist/:ISBN", async (req, res) => {
   const ISBN = req.params.ISBN;
   const sql = `SELECT status_name,stock,price,status_id from (SELECT COUNT(used_id) as stock ,status_id,price FROM used WHERE ISBN=? and used_state=4 and sale is null GROUP by status_id) as a LEFT JOIN book_status USING (status_id)`;

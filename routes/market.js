@@ -37,7 +37,7 @@ router.get("/display_random", async (req, res) => {
     return res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
 });
-//主頁展示
+//主頁展示(子分類)
 router.get("/display", async (req, res) => {
   const category_id = req.query.category_id; // 從 URL 取得前端送過來的 category ID / label
   const label = req.query.label;
